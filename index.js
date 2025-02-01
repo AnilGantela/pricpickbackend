@@ -7,7 +7,10 @@ const productRoutes = require("./routes/ProductRoutes");
 
 const dotEnv = require("dotenv");
 dotEnv.config();
-app.listen(3000, () => {
+
+const PORT = process.env.PORT || 4000;
+
+app.listen(PORT, () => {
   console.log("Hello");
 });
 
