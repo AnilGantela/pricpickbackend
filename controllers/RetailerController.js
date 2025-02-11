@@ -18,6 +18,13 @@ const transporter = nodemailer.createTransport({
 // Helper function to send OTP verification email
 const sendUserOtpVerificationEmail = async ({ _id, email }) => {
   try {
+    const existingOTP = await UserOTPVerification.findOne({ userId: _id });
+
+    // Prevent resending OTP within 60 seconds
+    if (existingOTP && Date.now() - existingOTP.createdAt < 60000) {
+      throw new Error("Please wait 60 seconds before requesting another OTP.");
+    }
+
     const otp = `${Math.floor(100000 + Math.random() * 900000)}`;
 
     const mailOptions = {
@@ -25,30 +32,33 @@ const sendUserOtpVerificationEmail = async ({ _id, email }) => {
       to: email,
       subject: "Verify Your Email",
       html: `
-        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+        <div style="text-align: center; font-family: Arial, sans-serif;">
           <h1 style="color: #4CAF50;">Your OTP Code</h1>
-          <p style="font-size: 18px;">Please use the following OTP to complete your verification process:</p>
-          <div style="font-size: 36px; font-weight: bold; margin: 20px 0; color: #333;">${otp}</div>
-          <p style="font-size: 14px; color: #666;">This OTP is valid for 5 minutes. Do not share it with anyone.</p>
+          <p style="font-size: 18px;">Use this OTP to verify your email:</p>
+          <div style="font-size: 36px; font-weight: bold; color: #333;">${otp}</div>
+          <p style="font-size: 14px; color: #666;">OTP expires in 5 minutes.</p>
         </div>
       `,
     };
 
     const hashedOTP = await bcrypt.hash(otp, 10);
 
-    const newOTPVerification = new UserOTPVerification({
-      userId: _id,
-      otp: hashedOTP,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 300000,
-    });
+    await UserOTPVerification.updateOne(
+      { userId: _id },
+      {
+        userId: _id,
+        otp: hashedOTP,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 300000,
+      },
+      { upsert: true }
+    );
 
-    await newOTPVerification.save();
     await transporter.sendMail(mailOptions);
 
     return { success: true, message: "Verification OTP email sent." };
   } catch (error) {
-    throw new Error("Failed to send OTP email.");
+    throw new Error(error.message || "Failed to send OTP email.");
   }
 };
 
@@ -213,21 +223,19 @@ const verifyLoginOTP = async (req, res) => {
     }
 
     const user = await Retailer.findOne({ email });
+
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Fetch OTP records for this user
-    const otpRecord = await UserOTPVerification.findOne({
-      userId: user._id,
-    });
+    const otpRecord = await UserOTPVerification.findOne({ userId: user._id });
+
     if (!otpRecord) {
       return res
         .status(400)
         .json({ message: "OTP not found or already used." });
     }
 
-    // Check if OTP is expired
     if (otpRecord.expiresAt < Date.now()) {
       await UserOTPVerification.deleteMany({ userId: user._id });
       return res
@@ -235,7 +243,6 @@ const verifyLoginOTP = async (req, res) => {
         .json({ message: "OTP has expired. Please request a new one." });
     }
 
-    // Validate OTP
     const validOtp = await bcrypt.compare(otp, otpRecord.otp);
     if (!validOtp) {
       return res
@@ -243,7 +250,7 @@ const verifyLoginOTP = async (req, res) => {
         .json({ message: "Invalid OTP. Please try again." });
     }
 
-    // OTP is valid, delete it from the database
+    // Delete OTP record after successful verification
     await UserOTPVerification.deleteMany({ userId: user._id });
 
     // Generate JWT token
@@ -253,11 +260,9 @@ const verifyLoginOTP = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.status(200).json({
-      status: "SUCCESS",
-      message: "Login successful!",
-      token,
-    });
+    res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Login successful!", token });
   } catch (error) {
     console.error("Error verifying OTP:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
