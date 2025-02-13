@@ -205,6 +205,24 @@ const getRetailerProducts = async (req, res) => {
   }
 };
 
+const getProductCategoryData = async (req, res) => {
+  try {
+    const decoded = verifyToken(req);
+    const retailerId = decoded.id;
+
+    const categories = await Product.aggregate([
+      { $match: { retailerId: new mongoose.Types.ObjectId(retailerId) } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+      { $project: { _id: 0, category: "$_id", count: 1 } },
+    ]);
+
+    res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error fetching product categories:", error.message);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -212,4 +230,5 @@ module.exports = {
   getFeaturedProducts,
   applyDiscount,
   getRetailerProducts,
+  getProductCategoryData,
 };
