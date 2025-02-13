@@ -216,7 +216,49 @@ const applyDiscount = async (req, res) => {
   }
 };
 
+const getRetailerProducts = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized. No token provided." });
+    }
+
+    // Verify token and extract retailerId
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your_secret_key"
+    );
+    const retailerId = decoded.id;
+
+    if (!retailerId) {
+      return res
+        .status(400)
+        .json({ message: "Retailer ID not found in token." });
+    }
+
+    // Check if the retailer exists
+    const retailer = await Retailer.findById(retailerId);
+    if (!retailer) {
+      return res.status(404).json({ message: "Retailer not found." });
+    }
+
+    // Fetch products belonging to the retailer
+    const products = await Product.find({ retailerId });
+
+    res
+      .status(200)
+      .json({ message: "Products retrieved successfully.", products });
+  } catch (error) {
+    console.error("Error fetching retailer products:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
+  getRetailerProducts,
   createProduct,
   getAllProducts,
   getProductById,
