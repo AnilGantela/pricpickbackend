@@ -6,7 +6,11 @@ const retailerRoutes = require("./routes/RetailerRoute");
 const productRoutes = require("./routes/ProductRoutes");
 
 const cors = require("cors");
-app.use(cors()); // Allows access from anywhere
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Allow requests from your frontend
+  })
+);
 
 const dotEnv = require("dotenv");
 dotEnv.config();
