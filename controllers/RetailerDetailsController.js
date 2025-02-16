@@ -44,13 +44,30 @@ const getRetailerDetails = async (req, res) => {
   try {
     const retailerId = req.user.id;
 
+    // Fetch retailer details
     const retailerDetails = await RetailerDetails.findOne({ retailerId });
 
     if (!retailerDetails) {
       return res.status(404).json({ message: "Retailer details not found" });
     }
 
-    res.status(200).json(retailerDetails);
+    // Fetch username and email from Retailer model
+    const retailer = await Retailer.findById(retailerId).select(
+      "username email"
+    );
+
+    if (!retailer) {
+      return res.status(404).json({ message: "Retailer account not found" });
+    }
+
+    // Merge details with retailer info
+    const response = {
+      username: retailer.username,
+      email: retailer.email,
+      ...retailerDetails.toObject(), // Convert Mongoose document to plain object
+    };
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
