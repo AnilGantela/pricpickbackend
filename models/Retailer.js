@@ -6,12 +6,6 @@ const retailerSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  shopname: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
   email: {
     type: String,
     required: true,
@@ -20,33 +14,22 @@ const retailerSchema = new mongoose.Schema({
     trim: true,
     match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
   },
-  phoneNumber: {
-    type: String,
-    required: true,
-    match: /^[0-9]{10}$/,
-    trim: true,
-  },
   password: {
     type: String,
     required: true,
     trim: true,
   },
-  address: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  shoptime: {
-    type: String,
-    required: true,
-    trim: true,
-  },
   products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+  details: [{ type: mongoose.Schema.Types.ObjectId, ref: "RetailerDetails" }],
   createdDate: {
     type: Date,
     default: Date.now,
   },
   verified: {
+    type: Boolean,
+    default: false,
+  },
+  detailsAdded: {
     type: Boolean,
     default: false,
   },

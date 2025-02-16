@@ -4,6 +4,19 @@ const jwt = require("jsonwebtoken");
 const UserOTPVerification = require("../models/UserOTPVerification");
 const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
+const verifyToken = (req) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    throw new Error("Unauthorized. No token provided.");
+  }
+
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+  } catch (err) {
+    throw new Error("Invalid or expired token.");
+  }
+};
 
 dotenv.config();
 
@@ -15,7 +28,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Helper function to send OTP verification email
 const sendUserOtpVerificationEmail = async ({ _id, email }) => {
   try {
     const existingOTP = await UserOTPVerification.findOne({ userId: _id });
@@ -62,50 +74,27 @@ const sendUserOtpVerificationEmail = async ({ _id, email }) => {
   }
 };
 
-// Retailer Registration Handler
 const retailerRegister = async (req, res) => {
   try {
-    const {
-      username,
-      shopname,
-      email,
-      phoneNumber,
-      password,
-      address,
-      shoptime,
-    } = req.body;
+    const { username, email, password } = req.body;
 
-    if (
-      !username ||
-      !shopname ||
-      !email ||
-      !phoneNumber ||
-      !password ||
-      !address ||
-      !shoptime
-    ) {
+    if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
     const existingRetailer = await Retailer.findOne({
-      $or: [{ email }, { shopname }],
+      $or: [{ email }],
     });
     if (existingRetailer) {
-      return res
-        .status(400)
-        .json({ message: "Email or Shop Name already in use." });
+      return res.status(400).json({ message: "Email  already in use." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newRetailer = new Retailer({
       username,
-      shopname,
       email,
-      phoneNumber,
       password: hashedPassword,
-      address,
-      shoptime,
     });
     await newRetailer.save();
 
@@ -118,8 +107,7 @@ const retailerRegister = async (req, res) => {
     await sendUserOtpVerificationEmail({ _id: newRetailer._id, email });
 
     res.status(200).json({
-      message: "Retailer registered successfully!.",
-      token,
+      message: "Email verification is send. please enter the otp.",
     });
   } catch (error) {
     console.error("Error registering retailer:", error);
@@ -129,61 +117,59 @@ const retailerRegister = async (req, res) => {
   }
 };
 
-// OTP Verification Handler (using JWT token)
 const verifyOTP = async (req, res) => {
   try {
-    const { token, otp } = req.body;
+    const { email, otp } = req.body;
 
-    // Validate input
-    if (!token || !otp) {
-      return res.status(400).json({ message: "All fields are required." });
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required." });
     }
 
-    // Verify and decode JWT token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "your_secret_key"
-    );
-    const userId = decoded.id;
+    const user = await Retailer.findOne({ email });
 
-    // Fetch OTP records
-    const otpRecords = await UserOTPVerification.find({ userId });
-    if (otpRecords.length === 0) {
-      return res.status(404).json({
-        message:
-          "No OTP records found or email already verified. Please try again.",
-      });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
     }
 
-    const { expiresAt, otp: hashedOTP } = otpRecords[0];
+    const otpRecord = await UserOTPVerification.findOne({ userId: user._id });
 
-    // Check if OTP has expired
-    if (expiresAt < Date.now()) {
-      await UserOTPVerification.deleteMany({ userId });
+    if (!otpRecord) {
+      return res
+        .status(400)
+        .json({ message: "OTP not found or already used." });
+    }
+
+    if (otpRecord.expiresAt < Date.now()) {
+      await UserOTPVerification.deleteMany({ userId: user._id });
       return res
         .status(400)
         .json({ message: "OTP has expired. Please request a new one." });
     }
 
-    // Verify OTP
-    const validOtp = await bcrypt.compare(otp, hashedOTP);
+    const validOtp = await bcrypt.compare(otp, otpRecord.otp);
     if (!validOtp) {
-      return res.status(400).json({ message: "Invalid OTP." });
+      return res
+        .status(400)
+        .json({ message: "Invalid OTP. Please try again." });
     }
 
-    // Mark retailer as verified
-    await Retailer.updateOne({ _id: userId }, { verified: true });
-    await UserOTPVerification.deleteMany({ userId });
+    await Retailer.updateOne({ _id: user._id }, { verified: true });
 
-    res.status(200).json({
-      status: "VERIFIED",
-      message: "User email verified successfully.",
-    });
+    await UserOTPVerification.deleteMany({ userId: user._id });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res
+      .status(200)
+      .json({ status: "SUCCESS", message: "Registeration successful!", token });
   } catch (error) {
     console.error("Error verifying OTP:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error. Please try again later." });
+    res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
 
@@ -211,6 +197,26 @@ const retailerLogin = async (req, res) => {
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
+  }
+};
+
+const getRetailer = async (req, res) => {
+  try {
+    const decoded = verifyToken(req);
+    const retailerId = decoded.id;
+
+    const retailerDetails = await Retailer.findOne(
+      { _id: retailerId },
+      "username email detailsAdded" // Select only the required fields
+    );
+
+    if (!retailerDetails) {
+      return res.status(404).json({ message: "Retailer not found" });
+    }
+
+    res.status(200).json(retailerDetails);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -269,4 +275,10 @@ const verifyLoginOTP = async (req, res) => {
   }
 };
 
-module.exports = { retailerRegister, verifyOTP, retailerLogin, verifyLoginOTP };
+module.exports = {
+  retailerRegister,
+  verifyOTP,
+  retailerLogin,
+  verifyLoginOTP,
+  getRetailer,
+};
