@@ -12,7 +12,7 @@ const retailerSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
+    match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
   },
   password: {
     type: String,
@@ -20,7 +20,13 @@ const retailerSchema = new mongoose.Schema({
     trim: true,
   },
   products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
-  details: [{ type: mongoose.Schema.Types.ObjectId, ref: "RetailerDetails" }],
+
+  details: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "RetailerDetails",
+    unique: true,
+  },
+
   createdDate: {
     type: Date,
     default: Date.now,
@@ -32,8 +38,11 @@ const retailerSchema = new mongoose.Schema({
   detailsAdded: {
     type: Boolean,
     default: false,
+    index: true,
   },
 });
+
+retailerSchema.index({ email: 1 });
 
 const Retailer = mongoose.model("Retailer", retailerSchema);
 
