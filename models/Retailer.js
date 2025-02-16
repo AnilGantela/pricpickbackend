@@ -24,7 +24,6 @@ const retailerSchema = new mongoose.Schema({
   details: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "RetailerDetails",
-    unique: true,
   },
 
   createdDate: {
