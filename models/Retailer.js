@@ -42,8 +42,6 @@ const retailerSchema = new mongoose.Schema({
   },
 });
 
-retailerSchema.index({ email: 1 });
-
 const Retailer = mongoose.model("Retailer", retailerSchema);
 
 module.exports = Retailer;
