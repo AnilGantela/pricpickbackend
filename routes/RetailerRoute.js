@@ -9,6 +9,7 @@ router.post("/register", retailerContoller.retailerRegister);
 router.post("/addDetails", retailerDetailsController.createRetailerDetails);
 router.get("/Details", retailerDetailsController.getRetailerDetails);
 router.get("/", retailerContoller.getRetailer);
+router.post("/updateDetails", retailerDetailsController.updateDetails);
 
 router.post("/verifyOTP", retailerContoller.verifyOTP);
 

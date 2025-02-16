@@ -1,20 +1,8 @@
 const RetailerDetails = require("../models/RetailerDetails");
 const Retailer = require("../models/Retailer");
+const { verifyToken } = require("../middleware/authMiddleware.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const verifyToken = (req) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    throw new Error("Unauthorized. No token provided.");
-  }
-
-  try {
-    return jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
-  } catch (err) {
-    throw new Error("Invalid or expired token.");
-  }
-};
 
 const createRetailerDetails = async (req, res) => {
   try {
@@ -63,32 +51,27 @@ const getRetailerDetails = async (req, res) => {
   }
 };
 
-// Get a single retailer by ID
-exports.getRetailerById = async (req, res) => {
+// Assuming you have middleware for token verification
+
+const updateDetails = async (req, res) => {
   try {
-    const retailer = await RetailerDetails.findById(req.params.id);
-    if (!retailer)
-      return res.status(404).json({ message: "Retailer not found" });
+    const decoded = verifyToken(req);
+    const retailerId = decoded.id;
 
-    res.status(200).json(retailer);
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
+    const { phoneNumber, shoptime } = req.body;
+    const updateFields = {};
+    if (phoneNumber) updateFields.phoneNumber = phoneNumber;
+    if (shoptime) updateFields.shoptime = shoptime;
 
-// Update retailer details
-exports.updateRetailer = async (req, res) => {
-  try {
-    const { shopname, phoneNumber, address, shoptime } = req.body;
-
-    const updatedRetailer = await RetailerDetails.findByIdAndUpdate(
-      req.params.id,
-      { shopname, phoneNumber, address, shoptime },
+    const updatedRetailer = await RetailerDetails.findOneAndUpdate(
+      { retailerId: retailerId }, // Find by retailer's ID from token
+      updateFields,
       { new: true, runValidators: true }
     );
 
-    if (!updatedRetailer)
+    if (!updatedRetailer) {
       return res.status(404).json({ message: "Retailer not found" });
+    }
 
     res
       .status(200)
@@ -98,19 +81,4 @@ exports.updateRetailer = async (req, res) => {
   }
 };
 
-// Delete a retailer
-exports.deleteRetailer = async (req, res) => {
-  try {
-    const deletedRetailer = await RetailerDetails.findByIdAndDelete(
-      req.params.id
-    );
-    if (!deletedRetailer)
-      return res.status(404).json({ message: "Retailer not found" });
-
-    res.status(200).json({ message: "Retailer deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-module.exports = { createRetailerDetails, getRetailerDetails };
+module.exports = { createRetailerDetails, getRetailerDetails, updateDetails };
