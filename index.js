@@ -8,10 +8,11 @@ const productRoutes = require("./routes/ProductRoutes");
 const cors = require("cors");
 app.use(
   cors({
-    origin: "https://pricepickretailer.vercel.app/", // Allow requests from your frontend
+    origin: "https://pricepickretailer.vercel.app", // Allow only this domain
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
+    credentials: true, // Allow cookies (if needed)
   })
 );
-
 const dotEnv = require("dotenv");
 dotEnv.config();
 
