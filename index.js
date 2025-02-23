@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const retailerRoutes = require("./routes/RetailerRoute");
 const productRoutes = require("./routes/ProductRoutes");
+const userProducts = require("./routes/userProducts");
 
 const cors = require("cors");
 app.use(
@@ -39,3 +40,4 @@ app.use("/home", (req, res) => {
 
 app.use("/retailer", retailerRoutes);
 app.use("/retailer/product", productRoutes);
+app.use("/user/", userProducts);

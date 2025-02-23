@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema(
       ref: "Retailer",
       required: true,
     },
+
     createdAt: { type: Date, default: Date.now },
     updatedAt: {
       type: Date,
