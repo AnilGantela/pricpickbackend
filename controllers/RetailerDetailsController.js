@@ -1,4 +1,4 @@
-import cloudinary from "../config/cloudinary.js";
+const cloudinary = require("cloudinary").v2;
 import RetailerDetails from "../models/RetailerDetails.js";
 import Retailer from "../models/Retailer.js";
 
@@ -63,12 +63,10 @@ const createRetailerDetails = async (req, res) => {
     await retailerDetails.save();
     await Retailer.updateOne({ _id: retailerId }, { detailsAdded: true });
 
-    res
-      .status(201)
-      .json({
-        message: "Retailer details added successfully",
-        retailerDetails,
-      });
+    res.status(201).json({
+      message: "Retailer details added successfully",
+      retailerDetails,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -143,12 +141,10 @@ const updateDetails = async (req, res) => {
       return res.status(404).json({ message: "Retailer details not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Retailer details updated successfully",
-        updatedRetailer,
-      });
+    res.status(200).json({
+      message: "Retailer details updated successfully",
+      updatedRetailer,
+    });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
