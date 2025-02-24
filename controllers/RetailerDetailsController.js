@@ -1,4 +1,5 @@
-const cloudinary = require("cloudinary").v2;
+import { v2 as cloudinary } from "cloudinary";
+
 import RetailerDetails from "../models/RetailerDetails.js";
 import Retailer from "../models/Retailer.js";
 
