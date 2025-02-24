@@ -39,9 +39,10 @@ const createRetailerDetails = async (req, res) => {
 
     // Handle image upload with compression
     let imageUrl = "";
-    if (photo) {
+    if (image) {
       try {
-        const uploadedImage = await cloudinary.uploader.upload(photo, {
+        console.log("Received Image Data:", image.substring(0, 100)); // Debug log
+        const uploadedImage = await cloudinary.uploader.upload(image, {
           folder: "retailers",
           transformation: [
             { width: 500, height: 500, crop: "fill" },
@@ -53,6 +54,7 @@ const createRetailerDetails = async (req, res) => {
         });
         imageUrl = uploadedImage.secure_url;
       } catch (uploadError) {
+        console.error("Cloudinary Upload Error:", uploadError);
         return res
           .status(500)
           .json({ message: "Image upload failed", error: uploadError.message });
