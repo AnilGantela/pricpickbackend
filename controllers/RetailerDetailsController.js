@@ -41,7 +41,10 @@ const createRetailerDetails = async (req, res) => {
     let imageUrl = "";
     if (photo) {
       try {
-        console.log("Received Image Data:", image.substring(0, 100)); // Debug log
+        console.log(
+          "Received Image Data (First 100 chars):",
+          image.substring(0, 100)
+        ); // Debug log
         const uploadedImage = await cloudinary.uploader.upload(image, {
           folder: "retailers",
           transformation: [
@@ -53,6 +56,7 @@ const createRetailerDetails = async (req, res) => {
           ],
         });
         imageUrl = uploadedImage.secure_url;
+        console.log("Image uploaded successfully:", imageUrl);
       } catch (uploadError) {
         console.error("Cloudinary Upload Error:", uploadError);
         return res
