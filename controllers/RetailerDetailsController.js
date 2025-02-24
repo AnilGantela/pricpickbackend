@@ -43,7 +43,7 @@ const createRetailerDetails = async (req, res) => {
       try {
         console.log(
           "Received Image Data (First 100 chars):",
-          image.substring(0, 100)
+          photo.substring(0, 100)
         ); // Debug log
         const uploadedImage = await cloudinary.uploader.upload(photo, {
           folder: "retailers",
