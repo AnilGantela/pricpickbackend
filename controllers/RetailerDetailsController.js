@@ -39,7 +39,7 @@ const createRetailerDetails = async (req, res) => {
 
     // Handle image upload with compression
     let imageUrl = "";
-    if (image) {
+    if (photo) {
       try {
         console.log("Received Image Data:", image.substring(0, 100)); // Debug log
         const uploadedImage = await cloudinary.uploader.upload(image, {
