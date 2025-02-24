@@ -1,6 +1,8 @@
 const cloudinary = require("../config/cloudinary.js");
 const RetailerDetails = require("../models/RetailerDetails.js");
 const Retailer = require("../models/Retailer.js");
+
+// Create Retailer Details
 const createRetailerDetails = async (req, res) => {
   try {
     const { shopname, phoneNumber, address, shoptime, image } = req.body;
@@ -29,13 +31,19 @@ const createRetailerDetails = async (req, res) => {
         .json({ message: "Retailer details already exist" });
     }
 
-    // Handle image upload
+    // Handle image upload with compression
     let imageUrl = "";
     if (image) {
       try {
         const uploadedImage = await cloudinary.uploader.upload(image, {
           folder: "retailers",
-          transformation: [{ width: 500, height: 500, crop: "fill" }],
+          transformation: [
+            { width: 500, height: 500, crop: "fill" },
+            { quality: "auto:low" },
+            { fetch_format: "auto" },
+            { flags: "progressive" },
+            { dpr: "auto" },
+          ],
         });
         imageUrl = uploadedImage.secure_url;
       } catch (uploadError) {
@@ -45,6 +53,7 @@ const createRetailerDetails = async (req, res) => {
       }
     }
 
+    // Save retailer details
     const retailerDetails = new RetailerDetails({
       shopname,
       phoneNumber,
@@ -115,12 +124,18 @@ const updateDetails = async (req, res) => {
       if (address.state) updateFields.address.state = address.state;
     }
 
-    // Handle image upload
+    // Handle image upload with compression
     if (image) {
       try {
         const uploadedImage = await cloudinary.uploader.upload(image, {
           folder: "retailers",
-          transformation: [{ width: 500, height: 500, crop: "fill" }],
+          transformation: [
+            { width: 500, height: 500, crop: "fill" },
+            { quality: "auto:low" },
+            { fetch_format: "auto" },
+            { flags: "progressive" },
+            { dpr: "auto" },
+          ],
         });
         updateFields.photo = uploadedImage.secure_url;
       } catch (uploadError) {
