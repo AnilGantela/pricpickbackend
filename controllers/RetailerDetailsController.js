@@ -5,22 +5,28 @@ const Retailer = require("../models/Retailer.js");
 // Create Retailer Details
 const createRetailerDetails = async (req, res) => {
   try {
-    const { shopname, phoneNumber, address, shoptime, image } = req.body;
+    const {
+      shopname,
+      phoneNumber,
+      street,
+      pincode,
+      city,
+      state,
+      shoptime,
+      photo,
+    } = req.body;
     const retailerId = req.user.id;
 
-    if (!shopname || !phoneNumber || !address || !shoptime) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
     if (
-      !address.street ||
-      !address.pincode ||
-      !address.city ||
-      !address.state
+      !shopname ||
+      !phoneNumber ||
+      !street ||
+      !pincode ||
+      !city ||
+      !state ||
+      !shoptime
     ) {
-      return res
-        .status(400)
-        .json({ message: "Complete address details are required" });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     // Ensure the retailer does not already have a profile
@@ -33,9 +39,9 @@ const createRetailerDetails = async (req, res) => {
 
     // Handle image upload with compression
     let imageUrl = "";
-    if (image) {
+    if (photo) {
       try {
-        const uploadedImage = await cloudinary.uploader.upload(image, {
+        const uploadedImage = await cloudinary.uploader.upload(photo, {
           folder: "retailers",
           transformation: [
             { width: 500, height: 500, crop: "fill" },
@@ -58,10 +64,10 @@ const createRetailerDetails = async (req, res) => {
       shopname,
       phoneNumber,
       address: {
-        street: address.street,
-        pincode: address.pincode,
-        city: address.city,
-        state: address.state,
+        street,
+        pincode,
+        city,
+        state,
       },
       shoptime,
       photo: imageUrl,
