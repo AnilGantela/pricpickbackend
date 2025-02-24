@@ -16,6 +16,5 @@ router.use(authenticate);
 router.get("/", retailerController.getRetailer);
 router.post("/add-details", retailerDetailsController.createRetailerDetails);
 router.get("/details", retailerDetailsController.getRetailerDetails);
-router.put("/update-details", retailerDetailsController.updateDetails);
 
 module.exports = router;
