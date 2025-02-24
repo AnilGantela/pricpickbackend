@@ -149,4 +149,4 @@ const updateDetails = async (req, res) => {
   }
 };
 
-export { createRetailerDetails, getRetailerDetails, updateDetails };
+module.exports = { createRetailerDetails, getRetailerDetails, updateDetails };
