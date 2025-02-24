@@ -1,8 +1,6 @@
-import { v2 as cloudinary } from "cloudinary";
-
-import RetailerDetails from "../models/RetailerDetails.js";
-import Retailer from "../models/Retailer.js";
-
+const cloudinary = require("../config/cloudinary.js");
+const RetailerDetails = require("../models/RetailerDetails.js");
+const Retailer = require("../models/Retailer.js");
 const createRetailerDetails = async (req, res) => {
   try {
     const { shopname, phoneNumber, address, shoptime, image } = req.body;
