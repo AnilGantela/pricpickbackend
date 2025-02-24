@@ -45,7 +45,7 @@ const createRetailerDetails = async (req, res) => {
           "Received Image Data (First 100 chars):",
           image.substring(0, 100)
         ); // Debug log
-        const uploadedImage = await cloudinary.uploader.upload(image, {
+        const uploadedImage = await cloudinary.uploader.upload(photo, {
           folder: "retailers",
           transformation: [
             { width: 500, height: 500, crop: "fill" },
