@@ -140,7 +140,6 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-// Get featured products
 const getAllProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
