@@ -449,10 +449,11 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "Search term is required" });
     }
 
-    // Fetch products using case-insensitive, partial match search
-    const featuredProducts = await Product.find({
-      name: { $regex: searchName, $options: "i" }, // Case-insensitive search
-    }).populate("retailerId", "name"); // Fetch retailer name from RetailerDetails
+    // Fetch products with a case-insensitive search
+    const featuredProducts = await Product.find(
+      { name: { $regex: searchName, $options: "i" } },
+      "name price discount retailerId" // Fetch only required fields
+    ).populate("retailerId", "name address"); // Fetch shop name & address
 
     if (featuredProducts.length === 0) {
       return res
@@ -460,10 +461,15 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "No products found." });
     }
 
-    // Map products to include shop names
+    // Format response to include only required details
     const productsWithShops = featuredProducts.map((product) => ({
-      ...product.toObject(),
+      name: product.name,
       shopName: product.retailerId ? product.retailerId.name : "Unknown Shop",
+      price: product.price,
+      discount: product.discount,
+      address: product.retailerId
+        ? product.retailerId.address
+        : "Unknown Address",
     }));
 
     res.status(200).json({ success: true, products: productsWithShops });
@@ -472,8 +478,6 @@ const getRetailersProducts = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error." });
   }
 };
-
-module.exports = { getRetailersProducts };
 
 module.exports = {
   getProducts,
