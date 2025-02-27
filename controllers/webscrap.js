@@ -449,27 +449,32 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "Search term is required" });
     }
 
-    // Fetch products based on the search term
-    const featuredProducts = await Product.find({ name: searchName });
+    // Fetch products using case-insensitive, partial match search
+    const featuredProducts = await Product.find({
+      name: { $regex: searchName, $options: "i" }, // Case-insensitive search
+    }).populate("retailerId", "name"); // Fetch retailer name from RetailerDetails
 
-    // Fetch retailer details
-    const retailers = await RetailerDetails.find({});
+    if (featuredProducts.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No products found." });
+    }
 
-    // Map shop names to products
-    const productsWithShops = featuredProducts.map((product) => {
-      const retailer = retailers.find((r) => r._id.equals(product.retailerId));
-      return {
-        ...product.toObject(),
-        shopName: retailer ? retailer.name : "Unknown Shop",
-      };
-    });
+    // Map products to include shop names
+    const productsWithShops = featuredProducts.map((product) => ({
+      ...product.toObject(),
+      shopName: product.retailerId ? product.retailerId.name : "Unknown Shop",
+    }));
 
-    res.status(200).json(productsWithShops);
+    res.status(200).json({ success: true, products: productsWithShops });
   } catch (error) {
     console.error("Error fetching products:", error.message);
     res.status(500).json({ success: false, message: "Server error." });
   }
 };
+
+module.exports = { getRetailersProducts };
+
 module.exports = {
   getProducts,
   getRetailersProducts,
