@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 dotEnv.config();
 
 const Retailer = require("../models/Retailer");
+const RetailerDetails = require("../models/RetailerDetails");
 const Product = require("../models/Product");
 
 // Middleware to verify JWT
@@ -140,13 +141,34 @@ const deleteProduct = async (req, res) => {
 };
 
 // Get featured products
-const getFeaturedProducts = async (req, res) => {
+const getAllProducts = async (req, res) => {
   try {
-    const featuredProducts = await Product.find({ isFeatured: true });
-    res.status(200).json(featuredProducts);
+    const { searchName } = req.params;
+
+    if (!searchName) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Search term is required" });
+    }
+
+    // Fetch products based on the search term
+    const featuredProducts = await Product.find({ name: searchName });
+
+    // Fetch retailer details
+    const retailers = await RetailerDetails.find({});
+
+    // Map shop names to products
+    const productsWithShops = featuredProducts.map((product) => {
+      const retailer = retailers.find((r) => r._id.equals(product.retailerId));
+      return {
+        ...product.toObject(),
+        shopName: retailer ? retailer.name : "Unknown Shop",
+      };
+    });
+
+    res.status(200).json(productsWithShops);
   } catch (error) {
-    console.error("Error fetching featured products:", error.message);
-    res.status(500).json({ message: "Server error. Please try again later." });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -227,7 +249,7 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
-  getFeaturedProducts,
+  getAllProducts,
   applyDiscount,
   getRetailerProducts,
   getProductCategoryData,
