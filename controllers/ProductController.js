@@ -167,7 +167,8 @@ const getAllProducts = async (req, res) => {
 
     res.status(200).json(productsWithShops);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error fetching products:", error.message);
+    res.status(500).json({ success: false, message: "Server error." });
   }
 };
 
