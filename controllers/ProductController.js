@@ -140,38 +140,6 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-const getAllProducts = async (req, res) => {
-  try {
-    const { searchName } = req.params;
-
-    if (!searchName) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Search term is required" });
-    }
-
-    // Fetch products based on the search term
-    const featuredProducts = await Product.find({ name: searchName });
-
-    // Fetch retailer details
-    const retailers = await RetailerDetails.find({});
-
-    // Map shop names to products
-    const productsWithShops = featuredProducts.map((product) => {
-      const retailer = retailers.find((r) => r._id.equals(product.retailerId));
-      return {
-        ...product.toObject(),
-        shopName: retailer ? retailer.name : "Unknown Shop",
-      };
-    });
-
-    res.status(200).json(productsWithShops);
-  } catch (error) {
-    console.error("Error fetching products:", error.message);
-    res.status(500).json({ success: false, message: "Server error." });
-  }
-};
-
 // Apply discount to a product
 const applyDiscount = async (req, res) => {
   try {
@@ -249,7 +217,6 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
-  getAllProducts,
   applyDiscount,
   getRetailerProducts,
   getProductCategoryData,
