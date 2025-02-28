@@ -14,20 +14,12 @@ class ProductScraper {
 
   async initialize() {
     try {
-      (async () => {
-        this.browser = await puppeteer.launch({
-          executablePath:
-            "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", // Use system Chrome
-          headless: true,
-          args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        });
-
-        const page = await browser.newPage();
-        await page.goto("https://example.com");
-
-        console.log("Page loaded!");
-        await browser.close();
-      })();
+      this.browser = await puppeteer.launch({
+        executablePath:
+          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", // Use system Chrome
+        headless: false,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
 
       if (!this.browser) throw new Error("Puppeteer failed to launch");
 
