@@ -1,19 +1,21 @@
-# Use official Node.js image
-FROM node:20
+FROM node:18
 
 # Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy package.json and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy the rest of the application code
+# Install Chromium dependencies for Puppeteer
+RUN apt-get update && apt-get install -y wget \
+    && wget -qO- https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb > chrome.deb \
+    && dpkg -i chrome.deb || apt-get -fy install
+
+# Copy all files
 COPY . .
 
-# Expose the application port
+# Expose the port
 EXPOSE 3000
 
 # Start the application
