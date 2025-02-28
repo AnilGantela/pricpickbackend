@@ -1,6 +1,6 @@
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const chromium = require("@sparticuz/chrome-aws-lambda");
-const puppeteer = require("puppeteer-core");
+const puppeteer = require("puppeteer-extra");
 const RetailerDetails = require("../models/RetailerDetails");
 const Product = require("../models/Product");
 
