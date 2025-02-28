@@ -15,7 +15,7 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        headless: false,
+        headless: false, // Change to true in production
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -26,26 +26,15 @@ class ProductScraper {
         ignoreDefaultArgs: ["--disable-extensions"],
       });
 
-      this.page = await this.browser.newPage();
-      await this.page.setUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
-      );
+      if (!this.browser) throw new Error("Puppeteer failed to launch");
 
-      await this.page.evaluateOnNewDocument(() => {
-        navigator.geolocation.getCurrentPosition = (cb) => {
-          cb({
-            coords: {
-              latitude: 17.6868,
-              longitude: 83.2185,
-              accuracy: 100,
-            },
-          });
-        };
-      });
+      this.page = await this.browser.newPage();
+      if (!this.page) throw new Error("Failed to create a new page");
 
       console.log("✅ Browser initialized successfully.");
     } catch (error) {
       console.error("❌ Failed to launch Puppeteer:", error);
+      throw error; // Propagate the error to prevent further execution
     }
   }
 
