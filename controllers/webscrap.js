@@ -16,10 +16,8 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        headless: "new",
-        executablePath:
-          process.env.PUPPETEER_EXECUTABLE_PATH ||
-          "/opt/render/.cache/puppeteer/chrome/linux-133.0.6943.98/chrome",
+        headless: true,
+        executablePath: "/usr/bin/chromium-browser", // ✅ Corrected path
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
 
