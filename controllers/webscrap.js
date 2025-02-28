@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+const chromium = require("chrome-aws-lambda");
 const RetailerDetails = require("../models/RetailerDetails");
 const Product = require("../models/Product");
 
@@ -15,10 +16,9 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        executablePath:
-          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", // Use system Chrome
-        headless: false,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+        args: chromium.args,
       });
 
       if (!this.browser) throw new Error("Puppeteer failed to launch");
