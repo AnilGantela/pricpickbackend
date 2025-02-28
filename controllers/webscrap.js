@@ -4,6 +4,8 @@ const puppeteer = require("puppeteer-extra");
 const RetailerDetails = require("../models/RetailerDetails");
 const Product = require("../models/Product");
 const NodeCache = require("node-cache");
+const dotEnv = require("dotenv");
+dotEnv.config();
 
 // Initialize cache with a 1-hour TTL
 const cache = new NodeCache({ stdTTL: 3600 });
