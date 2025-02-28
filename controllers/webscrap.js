@@ -23,8 +23,9 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        executablePath: "/usr/bin/chromium-browser", // Set the correct path
-        headless: "new", // Enable headless mode
+        executablePath:
+          process.env.CHROME_PATH || "/usr/bin/google-chrome-stable", // Use the correct path
+        headless: "new",
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",

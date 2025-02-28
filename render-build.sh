@@ -1,9 +1,12 @@
 #!/bin/bash
+#!/bin/bash
 echo "Updating package lists..."
-sudo apt-get update
+apt-get update
 
 echo "Installing Chromium..."
-sudo apt-get install -y chromium-browser
+apt-get install -y chromium-browser
+
+
 
 npm install
 
