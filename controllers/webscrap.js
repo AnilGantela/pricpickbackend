@@ -17,7 +17,6 @@ class ProductScraper {
     try {
       this.browser = await puppeteer.launch({
         headless: "new",
-        executablePath: puppeteer.executablePath(), // ✅ Uses Puppeteer's bundled Chromium
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
 
