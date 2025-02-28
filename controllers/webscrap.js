@@ -23,16 +23,15 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        headless: "new", // Use 'new' or true for headless mode
+        executablePath: "/usr/bin/chromium-browser", // Set the correct path
+        headless: "new", // Enable headless mode
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
-          "--disable-gpu",
           "--disable-dev-shm-usage",
+          "--disable-gpu",
           "--single-process",
         ],
-        executablePath:
-          process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium-browser",
       });
 
       if (!this.browser) throw new Error("Puppeteer failed to launch");
