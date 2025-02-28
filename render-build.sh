@@ -6,6 +6,8 @@ apt-get update
 echo "Installing Chromium..."
 apt-get install -y chromium-browser
 
+which chromium-browser
+which google-chrome-stable
 
 
 npm install
