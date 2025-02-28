@@ -22,10 +22,11 @@ class ProductScraper {
 
   async initialize() {
     try {
+      const executablePath = await chromium.executablePath;
       this.browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
+        executablePath: executablePath || "/usr/bin/chromium-browser", // Fallback path
         headless: chromium.headless,
       });
 
