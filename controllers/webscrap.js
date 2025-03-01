@@ -51,8 +51,8 @@ class ProductScraper {
     console.log("🚀 Opening Flipkart...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "networkidle2", // Ensures the page is fully loaded
-        timeout: 60000, // 60s timeout
+        waitUntil: "domcontentloaded",
+        timeout: 120000,
       });
     } catch (error) {
       console.error("❌ Failed to load Flipkart:", error);
@@ -115,8 +115,8 @@ class ProductScraper {
     console.log("🚀 Opening Reliance Digital...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "networkidle2", // Ensures the page is fully loaded
-        timeout: 60000, // 60s timeout
+        waitUntil: "domcontentloaded",
+        timeout: 120000,
       });
     } catch (error) {
       console.error("❌ Failed to load Reliance Digital:", error);
@@ -194,8 +194,8 @@ class ProductScraper {
     console.log("🚀 Opening Croma...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "networkidle2", // Ensures the page is fully loaded
-        timeout: 60000, // 60s timeout
+        waitUntil: "domcontentloaded",
+        timeout: 120000,
       });
     } catch (error) {
       console.error("❌ Failed to load Croma:", error);
@@ -270,8 +270,8 @@ class ProductScraper {
     console.log("🚀 Opening Jiomart...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "networkidle2", // Ensures the page is fully loaded
-        timeout: 60000, // 60s timeout
+        waitUntil: "domcontentloaded",
+        timeout: 120000,
       });
     } catch (error) {
       console.error("❌ Failed to load Jiomart:", error);
@@ -346,8 +346,8 @@ class ProductScraper {
     console.log("🚀 Opening Amazon...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "networkidle2", // Ensures the page is fully loaded
-        timeout: 60000, // 60s timeout
+        waitUntil: "domcontentloaded",
+        timeout: 120000,
       });
     } catch (error) {
       console.error("❌ Failed to load Amazon:", error);
