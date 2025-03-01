@@ -22,6 +22,7 @@ class ProductScraper {
 
   async initialize() {
     try {
+      console.log("launched");
       this.browser = await puppeteer.launch({
         args: [
           "--no-sandbox",
@@ -30,7 +31,7 @@ class ProductScraper {
           "--disable-dev-shm-usage",
         ],
         executablePath: "/usr/bin/google-chrome-stable", // Use system-installed Chrome
-        headless: true,
+        headless: "new",
       });
 
       if (!this.browser) throw new Error("Puppeteer failed to launch");
