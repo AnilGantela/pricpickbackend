@@ -366,6 +366,8 @@ class ProductScraper {
     };
 
     console.log(`⌨️ Typing '${this.searchQuery}' in search...`);
+    await page.waitForSelector("#twotabsearchtextbox", { timeout: 60000 });
+
     await this.page.type(selectors.searchBox, this.searchQuery, { delay: 200 });
     await this.page.click(selectors.searchButton);
 
@@ -444,11 +446,11 @@ class ProductScraper {
     await this.initialize();
     let results = [];
 
-    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchFlipkart()));
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
+    results.push(...(await this.searchAmazon()));
 
     await this.browser.close();
     return results;
