@@ -51,8 +51,8 @@ class ProductScraper {
     console.log("🚀 Opening Flipkart...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
+        waitUntil: "networkidle2", // Ensures the page is fully loaded
+        timeout: 60000, // 60s timeout
       });
     } catch (error) {
       console.error("❌ Failed to load Flipkart:", error);
@@ -115,8 +115,8 @@ class ProductScraper {
     console.log("🚀 Opening Reliance Digital...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
+        waitUntil: "networkidle2", // Ensures the page is fully loaded
+        timeout: 60000, // 60s timeout
       });
     } catch (error) {
       console.error("❌ Failed to load Reliance Digital:", error);
@@ -194,8 +194,8 @@ class ProductScraper {
     console.log("🚀 Opening Croma...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
+        waitUntil: "networkidle2", // Ensures the page is fully loaded
+        timeout: 60000, // 60s timeout
       });
     } catch (error) {
       console.error("❌ Failed to load Croma:", error);
@@ -270,8 +270,8 @@ class ProductScraper {
     console.log("🚀 Opening Jiomart...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
+        waitUntil: "networkidle2", // Ensures the page is fully loaded
+        timeout: 60000, // 60s timeout
       });
     } catch (error) {
       console.error("❌ Failed to load Jiomart:", error);
@@ -346,8 +346,8 @@ class ProductScraper {
     console.log("🚀 Opening Amazon...");
     try {
       await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
+        waitUntil: "networkidle2", // Ensures the page is fully loaded
+        timeout: 60000, // 60s timeout
       });
     } catch (error) {
       console.error("❌ Failed to load Amazon:", error);
@@ -425,17 +425,18 @@ class ProductScraper {
     const MAX_ATTEMPTS = 5;
 
     while (attempts < MAX_ATTEMPTS) {
+      await this.page.evaluate(() => window.scrollBy(0, window.innerHeight));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       const newHeight = await this.page.evaluate(
         () => document.body.scrollHeight
       );
       if (newHeight === previousHeight) {
-        attempts++;
+        attempts++; // Only increment if there's no new content
       } else {
         attempts = 0;
       }
       previousHeight = newHeight;
-      await this.page.evaluate(() => window.scrollBy(0, window.innerHeight));
-      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 
