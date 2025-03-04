@@ -31,7 +31,7 @@ class ProductScraper {
           "--disable-dev-shm-usage",
         ],
         executablePath: "/usr/bin/google-chrome-stable", // Use system-installed Chrome
-        headless: "new",
+        headless: false,
       });
 
       if (!this.browser) throw new Error("Puppeteer failed to launch");
