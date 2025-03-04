@@ -366,7 +366,7 @@ class ProductScraper {
     };
 
     console.log(`⌨️ Typing '${this.searchQuery}' in search...`);
-    await page.waitForSelector("#twotabsearchtextbox", { timeout: 60000 });
+    await this.page.waitForSelector("#twotabsearchtextbox", { timeout: 60000 });
 
     await this.page.type(selectors.searchBox, this.searchQuery, { delay: 200 });
     await this.page.click(selectors.searchButton);
