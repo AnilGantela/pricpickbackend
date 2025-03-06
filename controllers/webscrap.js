@@ -61,6 +61,14 @@ class ProductScraper {
     const URL = "https://www.flipkart.com/";
     console.log("🚀 Opening Flipkart...");
     await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+    try {
+      await this.page.waitForSelector("button._2KpZ6l._2doB4z", {
+        timeout: 5000,
+      });
+      await this.page.click("button._2KpZ6l._2doB4z");
+    } catch (e) {
+      console.log("ℹ️ No login popup found.");
+    }
 
     // Make sure page loads completely
     await new Promise((resolve) => setTimeout(resolve, 5000));
