@@ -331,6 +331,78 @@ class ProductScraper {
     }
   }
 
+  async searchSnapdeal() {
+    const URL = "https://www.snapdeal.com/";
+    console.log("🚀 Opening snapdeal...");
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+
+    // Make sure page loads completely
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Selectors
+    const selectors = {
+      searchBox: "#inputValEnter",
+      productList: ".favDp .product-tuple-listing",
+      title: ".product-title",
+      price: ".product-price",
+      productLink: "a",
+    };
+
+    console.log(`⌨️ Searching for '${this.searchQuery}' on snapdeal...`);
+
+    try {
+      await this.page.waitForSelector(selectors.searchBox, { timeout: 10000 });
+
+      // Clear the input
+      await this.page.click(selectors.searchBox, { clickCount: 3 });
+      await this.page.keyboard.press("Backspace");
+
+      // Type query and search
+      await this.page.type(selectors.searchBox, this.searchQuery, {
+        delay: 100,
+      });
+      await this.page.keyboard.press("Enter");
+
+      console.log("⏳ Waiting for search results...");
+      await this.page.waitForSelector(selectors.productList, {
+        timeout: 30000,
+      });
+
+      console.log("📜 Scrolling to load more products...");
+      await this.scrollPage();
+
+      console.log("🔎 Extracting product details...");
+      return await this.page.evaluate((selectors) => {
+        return Array.from(document.querySelectorAll(selectors.productList))
+          .map((item) => {
+            const titleElement = item.querySelector(selectors.title);
+            const priceElement = item.querySelector(selectors.price);
+            const productLinkElement = item.querySelector(
+              selectors.productLink
+            );
+
+            return {
+              title: titleElement
+                ? titleElement.innerText.trim()
+                : "No title found",
+              price: priceElement
+                ? priceElement.innerText.trim().replace(/(\.\d+)?$/, "")
+                : "Price not available",
+              retailer: "snapdeal",
+              productLink: productLinkElement
+                ? "https://www.snapdeal.com" +
+                  productLinkElement.getAttribute("href")
+                : "No link available",
+            };
+          })
+          .filter((product) => product.title !== "No title found");
+      }, selectors);
+    } catch (error) {
+      console.log("⚠️ No products found or site blocking automation.");
+      return [];
+    }
+  }
+
   async searchAmazon() {
     const URL = "https://www.amazon.in/";
     const selectors = {
