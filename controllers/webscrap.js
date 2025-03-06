@@ -22,42 +22,44 @@ class ProductScraper {
 
   async initialize() {
     try {
-      console.log("launched");
       this.browser = await puppeteer.launch({
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
-          "--disable-gpu",
           "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
         ],
-        executablePath: "/usr/bin/google-chrome-stable", // Use system-installed Chrome
-        headless: "new",
+        ignoreDefaultArgs: ["--disable-extensions"],
       });
 
-      if (!this.browser) throw new Error("Puppeteer failed to launch");
-
       this.page = await this.browser.newPage();
-      if (!this.page) throw new Error("Failed to create a new page");
+      await this.page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+      );
+
+      await this.page.evaluateOnNewDocument(() => {
+        navigator.geolocation.getCurrentPosition = (cb) => {
+          cb({
+            coords: {
+              latitude: 17.6868,
+              longitude: 83.2185,
+              accuracy: 100,
+            },
+          });
+        };
+      });
 
       console.log("✅ Browser initialized successfully.");
     } catch (error) {
       console.error("❌ Failed to launch Puppeteer:", error);
-      throw error; // Propagate the error to prevent further execution
     }
   }
 
   async searchFlipkart() {
     const URL = "https://www.flipkart.com/";
     console.log("🚀 Opening Flipkart...");
-    try {
-      await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 120000,
-      });
-    } catch (error) {
-      console.error("❌ Failed to load Flipkart:", error);
-      return [];
-    }
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
 
     try {
       await this.page.waitForSelector("button._2KpZ6l._2doB4z", {
@@ -113,15 +115,10 @@ class ProductScraper {
   async searchRelianceDigital() {
     const URL = "https://www.reliancedigital.in/";
     console.log("🚀 Opening Reliance Digital...");
-    try {
-      await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 120000,
-      });
-    } catch (error) {
-      console.error("❌ Failed to load Reliance Digital:", error);
-      return [];
-    }
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+
+    // Make sure page loads completely
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Selectors
     const selectors = {
@@ -132,10 +129,10 @@ class ProductScraper {
       price: ".price",
       productLink: "a.details-container",
     };
-
     console.log(
       `⌨️ Searching for '${this.searchQuery}' on Reliance Digital...`
     );
+
     try {
       await this.page.waitForSelector(selectors.searchBox, { timeout: 10000 });
 
@@ -192,15 +189,10 @@ class ProductScraper {
   async searchCroma() {
     const URL = "https://www.croma.com/";
     console.log("🚀 Opening Croma...");
-    try {
-      await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 120000,
-      });
-    } catch (error) {
-      console.error("❌ Failed to load Croma:", error);
-      return [];
-    }
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+
+    // Make sure page loads completely
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Selectors
     const selectors = {
@@ -212,6 +204,7 @@ class ProductScraper {
     };
 
     console.log(`⌨️ Searching for '${this.searchQuery}' on Croma...`);
+
     try {
       await this.page.waitForSelector(selectors.searchBox, { timeout: 10000 });
 
@@ -267,16 +260,11 @@ class ProductScraper {
 
   async searchJiomart() {
     const URL = "https://www.jiomart.com/";
-    console.log("🚀 Opening Jiomart...");
-    try {
-      await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 120000,
-      });
-    } catch (error) {
-      console.error("❌ Failed to load Jiomart:", error);
-      return [];
-    }
+    console.log("🚀 Opening jiomart...");
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+
+    // Make sure page loads completely
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Selectors
     const selectors = {
@@ -287,7 +275,8 @@ class ProductScraper {
       productLink: "a",
     };
 
-    console.log(`⌨️ Searching for '${this.searchQuery}' on Jiomart...`);
+    console.log(`⌨️ Searching for '${this.searchQuery}' on jiomart...`);
+
     try {
       await this.page.waitForSelector(selectors.searchBox, { timeout: 10000 });
 
@@ -326,7 +315,7 @@ class ProductScraper {
               price: priceElement
                 ? priceElement.innerText.trim().replace(/(\.\d+)?$/, "")
                 : "Price not available",
-              retailer: "Jiomart",
+              retailer: "jiomart",
               productLink: productLinkElement
                 ? "https://www.jiomart.com/" +
                   productLinkElement.getAttribute("href")
@@ -343,18 +332,6 @@ class ProductScraper {
 
   async searchAmazon() {
     const URL = "https://www.amazon.in/";
-    console.log("🚀 Opening Amazon...");
-    try {
-      await this.page.goto(URL, {
-        waitUntil: "domcontentloaded",
-        timeout: 120000,
-      });
-    } catch (error) {
-      console.error("❌ Failed to load Amazon:", error);
-      return [];
-    }
-
-    // Selectors
     const selectors = {
       searchBox: "#twotabsearchtextbox",
       searchButton: "#nav-search-submit-button",
@@ -365,9 +342,10 @@ class ProductScraper {
       productLink: ".a-link-normal.s-line-clamp-2.s-link-style.a-text-normal",
     };
 
-    console.log(`⌨️ Typing '${this.searchQuery}' in search...`);
-    await this.page.waitForSelector("#twotabsearchtextbox", { timeout: 60000 });
+    console.log("🚀 Opening Amazon...");
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
 
+    console.log(`⌨️ Typing '${this.searchQuery}' in search...`);
     await this.page.type(selectors.searchBox, this.searchQuery, { delay: 200 });
     await this.page.click(selectors.searchButton);
 
@@ -423,22 +401,14 @@ class ProductScraper {
 
   async scrollPage() {
     let previousHeight = 0;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 5;
-
-    while (attempts < MAX_ATTEMPTS) {
-      await this.page.evaluate(() => window.scrollBy(0, window.innerHeight));
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const newHeight = await this.page.evaluate(
+    while (true) {
+      let newHeight = await this.page.evaluate(
         () => document.body.scrollHeight
       );
-      if (newHeight === previousHeight) {
-        attempts++; // Only increment if there's no new content
-      } else {
-        attempts = 0;
-      }
+      if (newHeight === previousHeight) break;
       previousHeight = newHeight;
+      await this.page.evaluate(() => window.scrollBy(0, window.innerHeight));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 
@@ -446,11 +416,11 @@ class ProductScraper {
     await this.initialize();
     let results = [];
 
+    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchFlipkart()));
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
-    results.push(...(await this.searchAmazon()));
 
     await this.browser.close();
     return results;
