@@ -62,55 +62,70 @@ class ProductScraper {
     console.log("🚀 Opening Flipkart...");
     await this.page.goto(URL, { waitUntil: "domcontentloaded" });
 
+    // Make sure page loads completely
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Selectors
+    const selectors = {
+      searchBox: ".zDPmFV",
+      productList: ".col-12-12",
+      title: ".KzDlHZ",
+      price: ".Nx9bqj._4b5DiR",
+      productLink: "a.details-container",
+    };
+    console.log(`⌨️ Searching for '${this.searchQuery}' on flipkart...`);
+
     try {
-      await this.page.waitForSelector("button._2KpZ6l._2doB4z", {
-        timeout: 5000,
+      await this.page.waitForSelector(selectors.searchBox, { timeout: 10000 });
+
+      // Clear the input
+      await this.page.click(selectors.searchBox, { clickCount: 3 });
+      await this.page.keyboard.press("Backspace");
+
+      // Type query and search
+      await this.page.type(selectors.searchBox, this.searchQuery, {
+        delay: 100,
       });
-      await this.page.click("button._2KpZ6l._2doB4z");
-    } catch (e) {
-      console.log("ℹ️ No login popup found.");
-    }
+      await this.page.keyboard.press("Enter");
 
-    console.log(`⌨️ Searching for '${this.searchQuery}' on Flipkart...`);
-    await this.page.type(".zDPmFV", this.searchQuery, { delay: 200 });
-    await this.page.click("._2iLD__");
+      console.log("⏳ Waiting for search results...");
+      await this.page.waitForSelector(selectors.productList, {
+        timeout: 30000,
+      });
 
-    console.log("⏳ Waiting for search results...");
-    try {
-      await this.page.waitForSelector(".col-12-12", { timeout: 10000 });
+      console.log("📜 Scrolling to load more products...");
+      await this.scrollPage();
+
+      console.log("🔎 Extracting product details...");
+      return await this.page.evaluate((selectors) => {
+        return Array.from(document.querySelectorAll(selectors.productList))
+          .map((item) => {
+            const titleElement = item.querySelector(selectors.title);
+            const priceElement = item.querySelector(selectors.price);
+            const productLinkElement = item.querySelector(
+              selectors.productLink
+            );
+
+            return {
+              title: titleElement
+                ? titleElement.innerText.trim()
+                : "No title found",
+              price: priceElement
+                ? priceElement.innerText.replace(/[^\d]/g, "")
+                : "Price not available",
+              retailer: "Flipkart",
+              productLink: productLinkElement
+                ? "https://www.flipkart.com/" +
+                  productLinkElement.getAttribute("href")
+                : "No link available",
+            };
+          })
+          .filter((product) => product.title !== "No title found");
+      }, selectors);
     } catch (error) {
-      console.log("⚠️ No products found on Flipkart.");
+      console.log("⚠️ No products found or site blocking automation.");
       return [];
     }
-
-    console.log("📜 Scrolling to load more products...");
-    await this.scrollPage();
-
-    console.log("🔎 Extracting Flipkart product details...");
-    return await this.page.evaluate(() => {
-      return Array.from(document.querySelectorAll(".col-12-12"))
-        .map((item) => {
-          const title = item.querySelector(".KzDlHZ")?.innerText.trim();
-          const price = item
-            .querySelector(".Nx9bqj._4b5DiR")
-            ?.innerText.replace(/[^0-9]/g, "");
-          const productLink = item
-            .querySelector(".CGtC98")
-            ?.getAttribute("href");
-
-          return title
-            ? {
-                title,
-                price: price ? parseFloat(price) : "Price not available",
-                retailer: "Flipkart",
-                productLink: productLink
-                  ? `https://www.flipkart.com${productLink}`
-                  : "No link available",
-              }
-            : null;
-        })
-        .filter((product) => product);
-    });
   }
 
   async searchRelianceDigital() {
