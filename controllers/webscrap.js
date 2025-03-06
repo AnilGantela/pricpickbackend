@@ -72,7 +72,7 @@ class ProductScraper {
     }
 
     console.log(`⌨️ Searching for '${this.searchQuery}' on Flipkart...`);
-    await this.page.type(".Pke_EE", this.searchQuery, { delay: 200 });
+    await this.page.type(".zDPmFV", this.searchQuery, { delay: 200 });
     await this.page.click("._2iLD__");
 
     console.log("⏳ Waiting for search results...");
