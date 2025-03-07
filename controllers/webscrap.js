@@ -39,6 +39,11 @@ class ProductScraper {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
       );
 
+      await this.page.setExtraHTTPHeaders({
+        "Accept-Language": "en-US,en;q=0.9",
+        Referer: "https://www.google.com/",
+      });
+
       await this.page.evaluateOnNewDocument(() => {
         navigator.geolocation.getCurrentPosition = (cb) => {
           cb({
@@ -75,11 +80,11 @@ class ProductScraper {
 
     // Selectors
     const selectors = {
-      searchBox: ".zDPmFV",
+      searchBox: ".Pke_EE",
       productList: ".col-12-12",
       title: ".KzDlHZ",
       price: ".Nx9bqj._4b5DiR",
-      productLink: "a.details-container",
+      productLink: "a",
     };
     console.log(`⌨️ Searching for '${this.searchQuery}' on flipkart...`);
 
@@ -365,7 +370,7 @@ class ProductScraper {
     // Selectors
     const selectors = {
       searchBox: "#inputValEnter",
-      productList: ".favDp .product-tuple-listing",
+      productList: ".col-xs-6",
       title: ".product-title",
       price: ".product-price",
       productLink: "a",
@@ -520,7 +525,7 @@ class ProductScraper {
     results.push(...(await this.searchRelianceDigital()));
 
     await this.browser.close();
-    return results;
+    console.log(results);
   }
 }
 
