@@ -1,19 +1,27 @@
-# Use the official Puppeteer image with Chrome pre-installed
 FROM ghcr.io/puppeteer/puppeteer:latest
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files before changing ownership
+# Install necessary dependencies
+USER root
+RUN apt-get update && apt-get install -y wget gnupg \
+    && wget -qO- https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /usr/share/keyrings/google-chrome-keyring.gpg \
+    && echo 'deb [signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update && apt-get install -y google-chrome-stable \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
 COPY package*.json ./
 
-# Install dependencies as root to avoid permission issues
-USER root
+# Change ownership for Puppeteer user
 RUN chown -R pptruser:pptruser /app
-RUN npm install --omit=dev  
 
 # Switch to Puppeteer user
 USER pptruser
+
+# Install dependencies
+RUN npm install --omit=dev
 
 # Copy the rest of the app
 COPY . .
