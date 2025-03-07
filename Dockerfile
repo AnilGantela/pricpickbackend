@@ -1,3 +1,4 @@
+# Use the official Puppeteer image with Chrome pre-installed
 FROM ghcr.io/puppeteer/puppeteer:latest
 
 # Set working directory
@@ -6,15 +7,13 @@ WORKDIR /app
 # Copy package files before changing ownership
 COPY package*.json ./
 
-# Grant ownership to pptruser before running npm install
+# Install dependencies as root to avoid permission issues
 USER root
 RUN chown -R pptruser:pptruser /app
+RUN npm install --omit=dev  
 
 # Switch to Puppeteer user
 USER pptruser
-
-# Install dependencies
-RUN npm install --omit=dev  # Avoid permission issues
 
 # Copy the rest of the app
 COPY . .
