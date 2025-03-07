@@ -26,9 +26,10 @@ class ProductScraper {
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-accelerated-2d-canvas",
-          "--disable-gpu",
+          "--disable-dev-shm-usage", // Prevents Chrome from using /dev/shm, reducing memory
+          "--disable-gpu", // Disables GPU acceleration to save memory
+          "--single-process", // Runs Chrome in a single process
+          "--disable-software-rasterizer",
         ],
         executablePath: "/usr/bin/google-chrome-stable",
         ignoreDefaultArgs: ["--disable-extensions"],
