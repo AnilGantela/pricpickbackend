@@ -583,17 +583,8 @@ const getRetailersProducts = async (req, res) => {
     }
 
     // Format response to include only required details
-    const productsWithShops = featuredProducts.map((product) => ({
-      name: product.name,
-      shopName: product.retailerId ? product.retailerId.name : "Unknown Shop",
-      price: product.price,
-      discount: product.discount,
-      address: product.retailerId
-        ? product.retailerId.address
-        : "Unknown Address",
-    }));
 
-    res.status(200).json({ success: true, products: productsWithShops });
+    res.status(200).json({ success: true, products: featuredProducts });
   } catch (error) {
     console.error("Error fetching products:", error.message);
     res.status(500).json({ success: false, message: "Server error." });

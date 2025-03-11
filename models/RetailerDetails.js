@@ -44,7 +44,7 @@ const retailerDetailsSchema = new mongoose.Schema({
   photo: {
     type: String,
     default:
-      "https://res.cloudinary.com/dzsgsaxyt/image/upload/v1672815063/cld-sample.jpg",
+      "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2264922221.jpg",
     required: false, // Not mandatory but useful for storing Cloudinary URLs
     trim: true,
   },
