@@ -592,18 +592,21 @@ const getProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getProducts:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Something went wrong. Please try again later.",
-      });
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+    });
   }
 };
 
 const getRetailersProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
+    if (mongoose.connection.readyState !== 1) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Database not connected" });
+    }
 
     // Validate input
     if (!searchName || !searchName.trim()) {
@@ -652,14 +655,12 @@ const getRetailersProducts = async (req, res) => {
       (product) => product.price >= priceThreshold
     );
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        averagePrice,
-        priceThreshold,
-        products: featuredProducts,
-      });
+    res.status(200).json({
+      success: true,
+      averagePrice,
+      priceThreshold,
+      products: featuredProducts,
+    });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Server error." });
