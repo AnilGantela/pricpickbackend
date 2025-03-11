@@ -23,6 +23,7 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
+        headless: "new",
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
