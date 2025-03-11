@@ -576,7 +576,7 @@ const getProducts = async (req, res) => {
 
     // Step 1: Filter Out Non-Phone Products Using Keyword Matching
     const filteredResults = results.filter((product) =>
-      product.name.toLowerCase().includes("iphone")
+      product.name.toLowerCase().includes(searchName)
     );
 
     if (filteredResults.length === 0) {
