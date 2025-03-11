@@ -574,7 +574,7 @@ const getRetailersProducts = async (req, res) => {
     const featuredProducts = await Product.find(
       { name: { $regex: searchName, $options: "i" } },
       "name price discount retailerId" // Fetch only required fields
-    ).populate("retailerId", "name address"); // Fetch shop name & address
+    );
 
     if (featuredProducts.length === 0) {
       return res
