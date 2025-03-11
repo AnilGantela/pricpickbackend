@@ -564,7 +564,7 @@ const getRetailersProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
 
-    if (!searchName) {
+    if (!searchName || !searchName.trim()) {
       return res
         .status(400)
         .json({ success: false, message: "Search term is required" });
@@ -574,19 +574,17 @@ const getRetailersProducts = async (req, res) => {
     const featuredProducts = await Product.find(
       { name: { $regex: searchName, $options: "i" } },
       "name price discount retailerId" // Fetch only required fields
-    );
+    ).lean(); // Convert to plain JavaScript objects for better performance
 
     if (featuredProducts.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "No products found.", Anil: "Hii" });
+        .json({ success: false, message: "No products found." });
     }
-
-    // Format response to include only required details
 
     res.status(200).json({ success: true, products: featuredProducts });
   } catch (error) {
-    console.error("Error fetching products:", error.message);
+    console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Server error." });
   }
 };
