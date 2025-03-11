@@ -579,7 +579,7 @@ const getRetailersProducts = async (req, res) => {
     if (featuredProducts.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "No products found." });
+        .json({ success: false, message: "No products found.", Anil: "Hii" });
     }
 
     // Format response to include only required details
