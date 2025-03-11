@@ -222,6 +222,19 @@ class ProductScraper {
     console.log("🚀 Opening Croma...");
     await this.page.goto(URL, { waitUntil: "load", timeout: 30000 });
 
+    const isBlocked = await this.page.evaluate(() => {
+      return (
+        document.body.innerText.includes("Access Denied") ||
+        document.title.includes("Forbidden")
+      );
+    });
+
+    if (isBlocked) {
+      console.log("🚨 Croma blocked Puppeteer!");
+      await browser.close();
+      return [];
+    }
+
     // Make sure page loads completely
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
