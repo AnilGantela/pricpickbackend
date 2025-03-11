@@ -603,11 +603,6 @@ const getProducts = async (req, res) => {
 const getRetailersProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
-    if (mongoose.connection.readyState !== 1) {
-      return res
-        .status(500)
-        .json({ success: false, message: "Database not connected" });
-    }
 
     // Validate input
     if (!searchName || !searchName.trim()) {
