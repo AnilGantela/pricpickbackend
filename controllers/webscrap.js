@@ -535,28 +535,69 @@ const getProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
 
-    if (!searchName || typeof searchName !== "string") {
+    if (!searchName || typeof searchName !== "string" || !searchName.trim()) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid search term" });
     }
 
-    const sanitizedQuery = searchName.trim().replace(/[^a-zA-Z0-9\s]/g, "");
+    const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
 
     // Check cache first
     const cachedResults = cache.get(sanitizedQuery);
-    if (cachedResults) {
+    if (cachedResults !== undefined) {
       return res.json({ success: true, results: cachedResults });
     }
 
     const scraper = new ProductScraper(sanitizedQuery);
-    const results = await scraper.scrapeAll();
+    let results = await scraper.scrapeAll();
+
+    if (!results || results.length === 0) {
+      cache.set(sanitizedQuery, null, 3600); // Cache empty results for 1 hour
+      return res.json({ success: true, results: [] });
+    }
+
+    // Step 1: Filter Out Non-Phone Products Using Keyword Matching
+    const filteredResults = results.filter((product) =>
+      product.name.toLowerCase().includes("iphone")
+    );
+
+    if (filteredResults.length === 0) {
+      return res.json({ success: true, results: [] }); // No valid phones found
+    }
+
+    // Step 2: Calculate the Average Price
+    const totalPrice = filteredResults.reduce(
+      (sum, product) => sum + (product.price || 0),
+      0
+    );
+    const averagePrice = totalPrice / filteredResults.length;
+
+    // Step 3: Compute the Threshold (Average / 2)
+    const priceThreshold = averagePrice / 2;
+
+    // Step 4: Remove Products Below the Threshold
+    const finalResults = filteredResults.filter(
+      (product) => product.price >= priceThreshold
+    );
 
     // Cache results
-    cache.set(sanitizedQuery, results);
-    res.json({ success: true, results });
+    cache.set(sanitizedQuery, finalResults, 3600);
+
+    res.json({
+      success: true,
+      averagePrice,
+      priceThreshold,
+      results: finalResults,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error in getProducts:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Something went wrong. Please try again later.",
+      });
   }
 };
 
@@ -564,25 +605,61 @@ const getRetailersProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
 
+    // Validate input
     if (!searchName || !searchName.trim()) {
       return res
         .status(400)
-        .json({ success: false, message: "Search term is required" });
+        .json({ success: false, message: "Search term is required." });
     }
 
+    const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
+
     // Fetch products with a case-insensitive search
-    const featuredProducts = await Product.find(
-      { name: { $regex: searchName, $options: "i" } },
+    let featuredProducts = await Product.find(
+      { name: { $regex: sanitizedQuery, $options: "i" } },
       "name price discount retailerId" // Fetch only required fields
     ).lean(); // Convert to plain JavaScript objects for better performance
 
-    if (featuredProducts.length === 0) {
+    if (!featuredProducts || featuredProducts.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "No products found." });
     }
 
-    res.status(200).json({ success: true, products: featuredProducts });
+    // Step 1: Remove non-phone products
+    featuredProducts = featuredProducts.filter((product) =>
+      product.name.toLowerCase().includes("iphone")
+    );
+
+    if (featuredProducts.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No relevant products found." });
+    }
+
+    // Step 2: Calculate the average price
+    const totalPrice = featuredProducts.reduce(
+      (sum, product) => sum + (product.price || 0),
+      0
+    );
+    const averagePrice = totalPrice / featuredProducts.length;
+
+    // Step 3: Compute threshold (Average / 2)
+    const priceThreshold = averagePrice / 2;
+
+    // Step 4: Remove products priced below the threshold
+    featuredProducts = featuredProducts.filter(
+      (product) => product.price >= priceThreshold
+    );
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        averagePrice,
+        priceThreshold,
+        products: featuredProducts,
+      });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Server error." });
