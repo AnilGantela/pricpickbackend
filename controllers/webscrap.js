@@ -23,7 +23,7 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        headless: "new",
+        headless: true,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -38,7 +38,7 @@ class ProductScraper {
 
       this.page = await this.browser.newPage();
       await this.page.setUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       );
 
       await this.page.setExtraHTTPHeaders({
@@ -220,7 +220,7 @@ class ProductScraper {
   async searchCroma() {
     const URL = "https://www.croma.com/";
     console.log("🚀 Opening Croma...");
-    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+    await this.page.goto(URL, { waitUntil: "load", timeout: 30000 });
 
     // Make sure page loads completely
     await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -535,12 +535,12 @@ class ProductScraper {
     await this.initialize();
     let results = [];
 
+    results.push(...(await this.searchCroma()));
+    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchSnapdeal()));
     results.push(...(await this.searchFlipkart()));
-    results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
-    results.push(...(await this.searchAmazon()));
 
     await this.browser.close();
 
