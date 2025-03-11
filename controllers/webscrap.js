@@ -436,7 +436,7 @@ class ProductScraper {
   async searchAmazon() {
     const URL = "https://www.amazon.in/";
     const selectors = {
-      searchBox: "#twotabsearchtextbox",
+      searchBox: "[aria-label='Search Amazon.in']",
       searchButton: "#nav-search-submit-button",
       productList: ".s-result-item[role='listitem']",
       title: ".a-size-medium.a-spacing-none.a-color-base.a-text-normal",
