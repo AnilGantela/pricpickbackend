@@ -436,7 +436,7 @@ class ProductScraper {
   async searchAmazon() {
     const URL = "https://www.amazon.in/";
     const selectors = {
-      searchBox: "[aria-label='Search Amazon.in']",
+      searchBox: "input[name='field-keywords']", // More stable selector
       searchButton: "#nav-search-submit-button",
       productList: ".s-result-item[role='listitem']",
       title: ".a-size-medium.a-spacing-none.a-color-base.a-text-normal",
@@ -446,9 +446,25 @@ class ProductScraper {
     };
 
     console.log("🚀 Opening Amazon...");
-    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
+    await this.page.goto(URL, { waitUntil: "networkidle2" }); // Ensure full page load
+
+    console.log("🔎 Checking search box...");
+    const isSearchBoxPresent = await this.page.evaluate(() => {
+      return !!document.querySelector("input[name='field-keywords']");
+    });
+    console.log("Search box found:", isSearchBoxPresent);
+
+    if (!isSearchBoxPresent) {
+      console.log("⚠️ Search box not found. Exiting...");
+      return [];
+    }
 
     console.log(`⌨️ Typing '${this.searchQuery}' in search...`);
+    await this.page.waitForSelector(selectors.searchBox, {
+      visible: true,
+      timeout: 10000,
+    });
+    await this.page.click(selectors.searchBox, { delay: 200 });
     await this.page.type(selectors.searchBox, this.searchQuery, { delay: 200 });
     await this.page.click(selectors.searchButton);
 
@@ -520,11 +536,11 @@ class ProductScraper {
     let results = [];
 
     results.push(...(await this.searchSnapdeal()));
-    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchFlipkart()));
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
+    results.push(...(await this.searchAmazon()));
 
     await this.browser.close();
 
