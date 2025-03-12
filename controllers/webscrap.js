@@ -535,7 +535,7 @@ class ProductScraper {
     await this.initialize();
     let results = [];
 
-    results.push(...(await this.searchCroma()));
+    //results.push(...(await this.searchCroma()));
     results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchSnapdeal()));
     results.push(...(await this.searchFlipkart()));
