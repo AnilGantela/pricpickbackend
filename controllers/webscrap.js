@@ -655,7 +655,16 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "No products found." });
     }
 
-    res.status(200).json({ success: true, products });
+    // Extract required fields
+    const formattedProducts = products.map((product) => ({
+      shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
+      title: product.name,
+      description: product.description,
+      price: product.price - (product.price * (product.discount || 0)) / 100,
+      address: product.retailerId?.retailerDetailsId?.address || "N/A",
+    }));
+
+    res.status(200).json({ success: true, products: formattedProducts });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Server error." });
