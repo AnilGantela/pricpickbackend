@@ -540,7 +540,10 @@ const getProducts = async (req, res) => {
         .json({ success: false, message: "Invalid search term" });
     }
 
-    const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
+    const sanitizedQuery = searchName
+      .trim()
+      .replace(/[^\w\s\-\+\.]/g, "")
+      .toLowerCase();
 
     // Check cache first
     const cachedResults = cache.get(sanitizedQuery);
@@ -552,32 +555,39 @@ const getProducts = async (req, res) => {
     let results = await scraper.scrapeAll();
 
     if (!results || results.length === 0) {
-      cache.set(sanitizedQuery, null, 3600); // Cache empty results for 1 hour
+      cache.set(sanitizedQuery, [], 3600); // Cache empty array instead of null
       return res.json({ success: true, results: [] });
     }
 
     // Step 1: Filter Out Non-Phone Products Using Keyword Matching
     const filteredResults = results.filter((product) =>
-      product.name.toLowerCase().includes(searchName)
+      product.title.toLowerCase().includes(sanitizedQuery)
     );
 
     if (filteredResults.length === 0) {
-      return res.json({ success: true, results: [] }); // No valid phones found
+      cache.set(sanitizedQuery, [], 3600);
+      return res.json({ success: true, results: [] });
     }
 
-    // Step 2: Calculate the Average Price
-    const totalPrice = filteredResults.reduce(
-      (sum, product) => sum + (product.price || 0),
-      0
-    );
-    const averagePrice = totalPrice / filteredResults.length;
+    // Step 2: Calculate the Average Price (Ignore `null` Prices)
+    const validPrices = filteredResults
+      .map((p) => p.price)
+      .filter((price) => price !== null);
+
+    if (validPrices.length === 0) {
+      cache.set(sanitizedQuery, [], 3600);
+      return res.json({ success: true, results: [] });
+    }
+
+    const totalPrice = validPrices.reduce((sum, price) => sum + price, 0);
+    const averagePrice = totalPrice / validPrices.length;
 
     // Step 3: Compute the Threshold (Average / 2)
     const priceThreshold = averagePrice / 2;
 
     // Step 4: Remove Products Below the Threshold
     const finalResults = filteredResults.filter(
-      (product) => product.price >= priceThreshold
+      (product) => product.price !== null && product.price >= priceThreshold
     );
 
     // Cache results
@@ -590,7 +600,7 @@ const getProducts = async (req, res) => {
       results: finalResults,
     });
   } catch (error) {
-    console.error("Error in getProducts:", error);
+    console.error("❌ Error in getProducts:", error);
     res.status(500).json({
       success: false,
       message: "Something went wrong. Please try again later.",
