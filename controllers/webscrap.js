@@ -555,7 +555,7 @@ const getProducts = async (req, res) => {
 
     if (!results || results.length === 0) {
       cache.set(sanitizedQuery, [], 3600); // Cache empty array instead of null
-      return res.json({ success: true, message: "hi", results: [] });
+      return res.json({ success: true, message: "results empty", results: [] });
     }
 
     // Step 1: Convert price strings to numbers & filter out non-phone products
@@ -573,7 +573,7 @@ const getProducts = async (req, res) => {
 
     if (filteredResults.length === 0) {
       cache.set(sanitizedQuery, [], 3600);
-      return res.json({ success: true, results: [] });
+      return res.json({ success: true, message: "filteration", results: [] });
     }
 
     // Step 2: Calculate the Average Price (Ignore `null` Prices)
@@ -583,7 +583,7 @@ const getProducts = async (req, res) => {
 
     if (validPrices.length === 0) {
       cache.set(sanitizedQuery, [], 3600);
-      return res.json({ success: true, results: [] });
+      return res.json({ success: true, message: "validpricess", results: [] });
     }
 
     const totalPrice = validPrices.reduce((sum, price) => sum + price, 0);
