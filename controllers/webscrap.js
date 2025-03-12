@@ -217,6 +217,24 @@ class ProductScraper {
     }
   }
 
+  async safeGoto(url) {
+    let attempts = 3;
+    while (attempts > 0) {
+      try {
+        console.log(`🚀 Navigating to ${url} (Attempts left: ${attempts})`);
+        await this.page.goto(url, {
+          waitUntil: "networkidle2",
+          timeout: 30000,
+        });
+        return;
+      } catch (error) {
+        console.log(`⚠️ Navigation failed: ${error.message}`);
+        attempts--;
+      }
+    }
+    throw new Error("❌ Failed to load page after multiple attempts.");
+  }
+
   async searchCroma() {
     const URL = "https://www.croma.com/";
     console.log("🚀 Opening Croma...");
@@ -446,7 +464,7 @@ class ProductScraper {
     };
 
     console.log("🚀 Opening Amazon...");
-    await this.page.safeGoto(URL, { waitUntil: "networkidle2" }); // Ensure full page load
+    await this.safeGoto(URL, { waitUntil: "networkidle2" });
 
     console.log("🔎 Checking search box...");
     const isSearchBoxPresent = await this.page.evaluate(() => {
