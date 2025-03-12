@@ -525,7 +525,6 @@ class ProductScraper {
     //results.push(...(await this.searchRelianceDigital()));
 
     await this.browser.close();
-    console.log(results);
     return results;
   }
 }
