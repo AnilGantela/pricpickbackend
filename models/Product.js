@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema(
     discount: { type: Number, default: 0 },
     retailerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Retailer",
+      ref: "RetailerDetails",
       required: true,
     },
 
