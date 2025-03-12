@@ -560,20 +560,39 @@ const getProducts = async (req, res) => {
 
     // Step 1: Convert price strings to numbers & filter out non-phone products
     const filteredResults = results
-      .map((product) => ({
-        ...product,
-        price:
-          typeof product.price === "string"
-            ? parseFloat(product.price.replace(/[^\d.]/g, "")) || null
-            : product.price,
-      }))
-      .filter((product) =>
-        product.title.toLowerCase().includes(sanitizedQuery)
-      );
+      .map((product) => {
+        let cleanedPrice = null;
+
+        if (typeof product.price === "string") {
+          cleanedPrice = product.price
+            .replace(/[,₹Rs]/g, "") // Remove currency symbols & commas
+            .trim();
+
+          cleanedPrice = parseFloat(cleanedPrice) || null;
+        } else {
+          cleanedPrice = product.price;
+        }
+
+        return {
+          ...product,
+          price: cleanedPrice,
+        };
+      })
+      .filter((product) => {
+        // Ensure both are lowercase and trimmed properly
+        const titleLower = product.title.toLowerCase().trim();
+        const queryLower = sanitizedQuery.toLowerCase().trim();
+
+        return titleLower.includes(queryLower);
+      });
 
     if (filteredResults.length === 0) {
       cache.set(sanitizedQuery, [], 3600);
-      return res.json({ success: true, message: "filteration", results: [] });
+      return res.json({
+        success: true,
+        message: "Filtering resulted in no products",
+        results: [],
+      });
     }
 
     // Step 2: Calculate the Average Price (Ignore `null` Prices)
