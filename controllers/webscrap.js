@@ -639,50 +639,20 @@ const getRetailersProducts = async (req, res) => {
 
     const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
 
-    // Fetch products with a case-insensitive search
-    let featuredProducts = await Product.find(
-      { name: { $regex: sanitizedQuery, $options: "i" } },
-      "name price discount retailerId" // Fetch only required fields
-    ).lean(); // Convert to plain JavaScript objects for better performance
+    // Fetch products with retailer details
+    const products = await Product.find(
+      { name: { $regex: sanitizedQuery, $options: "i" } } // Case-insensitive search
+    )
+      .populate("retailerId") // Populate retailer details
+      .lean(); // Convert to plain JavaScript objects
 
-    if (!featuredProducts || featuredProducts.length === 0) {
+    if (!products || products.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "No products found." });
     }
 
-    // Step 1: Remove non-phone products
-    featuredProducts = featuredProducts.filter((product) =>
-      product.name.toLowerCase().includes("iphone")
-    );
-
-    if (featuredProducts.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No relevant products found." });
-    }
-
-    // Step 2: Calculate the average price
-    const totalPrice = featuredProducts.reduce(
-      (sum, product) => sum + (product.price || 0),
-      0
-    );
-    const averagePrice = totalPrice / featuredProducts.length;
-
-    // Step 3: Compute threshold (Average / 2)
-    const priceThreshold = averagePrice / 2;
-
-    // Step 4: Remove products priced below the threshold
-    featuredProducts = featuredProducts.filter(
-      (product) => product.price >= priceThreshold
-    );
-
-    res.status(200).json({
-      success: true,
-      averagePrice,
-      priceThreshold,
-      products: featuredProducts,
-    });
+    res.status(200).json({ success: true, products });
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Server error." });
