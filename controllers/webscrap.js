@@ -153,7 +153,7 @@ class ProductScraper {
     const selectors = {
       searchBox: ".search-input",
       searchButton: ".input-search-icon",
-      productList: ".product-card",
+      productList: ".card-info-container",
       title: ".product-card-title",
       price: ".price",
       productLink: "a.details-container",
