@@ -23,22 +23,20 @@ class ProductScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        headless: true,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage", // Prevents Chrome from using /dev/shm, reducing memory
-          "--disable-gpu", // Disables GPU acceleration to save memory
-          "--single-process", // Runs Chrome in a single process
-          "--disable-software-rasterizer",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
         ],
-        executablePath: "/usr/bin/google-chrome-stable",
+        headless: false,
         ignoreDefaultArgs: ["--disable-extensions"],
       });
 
       this.page = await this.browser.newPage();
       await this.page.setUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
       );
 
       await this.page.setExtraHTTPHeaders({
@@ -215,24 +213,6 @@ class ProductScraper {
       console.log("⚠️ No products found or site blocking automation.");
       return [];
     }
-  }
-
-  async safeGoto(url) {
-    let attempts = 3;
-    while (attempts > 0) {
-      try {
-        console.log(`🚀 Navigating to ${url} (Attempts left: ${attempts})`);
-        await this.page.goto(url, {
-          waitUntil: "networkidle2",
-          timeout: 30000,
-        });
-        return;
-      } catch (error) {
-        console.log(`⚠️ Navigation failed: ${error.message}`);
-        attempts--;
-      }
-    }
-    throw new Error("❌ Failed to load page after multiple attempts.");
   }
 
   async searchCroma() {
@@ -454,7 +434,7 @@ class ProductScraper {
   async searchAmazon() {
     const URL = "https://www.amazon.in/";
     const selectors = {
-      searchBox: "input[name='field-keywords']", // More stable selector
+      searchBox: "#twotabsearchtextbox",
       searchButton: "#nav-search-submit-button",
       productList: ".s-result-item[role='listitem']",
       title: ".a-size-medium.a-spacing-none.a-color-base.a-text-normal",
@@ -464,25 +444,9 @@ class ProductScraper {
     };
 
     console.log("🚀 Opening Amazon...");
-    await this.safeGoto(URL, { waitUntil: "networkidle2" });
-
-    console.log("🔎 Checking search box...");
-    const isSearchBoxPresent = await this.page.evaluate(() => {
-      return !!document.querySelector("input[name='field-keywords']");
-    });
-    console.log("Search box found:", isSearchBoxPresent);
-
-    if (!isSearchBoxPresent) {
-      console.log("⚠️ Search box not found. Exiting...");
-      return [];
-    }
+    await this.page.goto(URL, { waitUntil: "domcontentloaded" });
 
     console.log(`⌨️ Typing '${this.searchQuery}' in search...`);
-    await this.page.waitForSelector(selectors.searchBox, {
-      visible: true,
-      timeout: 10000,
-    });
-    await this.page.click(selectors.searchBox, { delay: 200 });
     await this.page.type(selectors.searchBox, this.searchQuery, { delay: 200 });
     await this.page.click(selectors.searchButton);
 
@@ -553,15 +517,15 @@ class ProductScraper {
     await this.initialize();
     let results = [];
 
-    //results.push(...(await this.searchCroma()));
-    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchSnapdeal()));
+    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchFlipkart()));
+    results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
 
     await this.browser.close();
-
+    console.log(results);
     return results;
   }
 }
