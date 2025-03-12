@@ -30,7 +30,7 @@ class ProductScraper {
           "--disable-accelerated-2d-canvas",
           "--disable-gpu",
         ],
-        headless: false,
+        executablePath: "/usr/bin/google-chrome-stable",
         ignoreDefaultArgs: ["--disable-extensions"],
       });
 
