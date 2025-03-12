@@ -629,6 +629,7 @@ const getProducts = async (req, res) => {
 const getRetailersProducts = async (req, res) => {
   try {
     const { searchName } = req.params;
+    const { city } = req.body;
 
     // Validate input
     if (!searchName || !searchName.trim()) {
@@ -637,9 +638,16 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "Search term is required." });
     }
 
-    const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
+    if (!city || !city.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "City is required." });
+    }
 
-    // Fetch products and populate both retailer & retailerDetails
+    const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
+    const sanitizedCity = city.trim().replace(/[^\w\s\-\+\.]/g, "");
+
+    // Fetch products and populate retailer & retailerDetails
     const products = await Product.find({
       name: { $regex: sanitizedQuery, $options: "i" },
     })
@@ -655,8 +663,21 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "No products found." });
     }
 
+    // Filter products by city
+    const filteredProducts = products.filter((product) =>
+      product.retailerId?.retailerDetailsId?.address?.city
+        ?.toLowerCase()
+        .includes(sanitizedCity.toLowerCase())
+    );
+
+    if (filteredProducts.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No products found in this city." });
+    }
+
     // Extract required fields
-    const formattedProducts = products.map((product) => ({
+    const formattedProducts = filteredProducts.map((product) => ({
       shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       title: product.name,
       description: product.description,
