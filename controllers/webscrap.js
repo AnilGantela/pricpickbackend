@@ -639,15 +639,15 @@ const getRetailersProducts = async (req, res) => {
 
     const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
 
-    // Fetch all products with full retailer details
+    // Fetch products and populate both retailer & retailerDetails
     const products = await Product.find({
-      name: { $regex: sanitizedQuery, $options: "i" }, // Case-insensitive search
+      name: { $regex: sanitizedQuery, $options: "i" },
     })
       .populate({
         path: "retailerId",
-        populate: { path: "retailerDetailsId" }, // Fetch RetailerDetails inside Retailer
-      }) // Get all retailer details
-      .lean(); // Convert to plain JavaScript objects
+        populate: { path: "retailerDetailsId" }, // ✅ Nested population
+      })
+      .lean();
 
     if (!products || products.length === 0) {
       return res

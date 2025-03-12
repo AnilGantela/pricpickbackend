@@ -81,7 +81,15 @@ const createRetailerDetails = async (req, res) => {
     });
 
     await retailerDetails.save();
-    await Retailer.updateOne({ _id: retailerId }, { detailsAdded: true });
+
+    // ✅ Update the Retailer with retailerDetailsId
+    await Retailer.updateOne(
+      { _id: retailerId },
+      {
+        detailsAdded: true,
+        retailerDetailsId: retailerDetails._id, // ✅ Store the retailerDetails ID
+      }
+    );
 
     res.status(201).json({
       message: "Retailer details added successfully",
