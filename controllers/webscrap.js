@@ -522,7 +522,7 @@ class ProductScraper {
     results.push(...(await this.searchFlipkart()));
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
-    results.push(...(await this.searchRelianceDigital()));
+    //results.push(...(await this.searchRelianceDigital()));
 
     await this.browser.close();
     console.log(results);
