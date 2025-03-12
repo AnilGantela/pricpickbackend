@@ -446,7 +446,7 @@ class ProductScraper {
     };
 
     console.log("🚀 Opening Amazon...");
-    await this.page.goto(URL, { waitUntil: "networkidle2" }); // Ensure full page load
+    await this.page.safeGoto(URL, { waitUntil: "networkidle2" }); // Ensure full page load
 
     console.log("🔎 Checking search box...");
     const isSearchBoxPresent = await this.page.evaluate(() => {
