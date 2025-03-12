@@ -13,7 +13,10 @@ const productSchema = new mongoose.Schema(
       ref: "Retailer",
       required: true,
     },
-
+    retailerDetailsId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RetailerDetails",
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: {
       type: Date,
