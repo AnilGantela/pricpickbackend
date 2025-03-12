@@ -559,10 +559,18 @@ const getProducts = async (req, res) => {
       return res.json({ success: true, results: [] });
     }
 
-    // Step 1: Filter Out Non-Phone Products Using Keyword Matching
-    const filteredResults = results.filter((product) =>
-      product.title.toLowerCase().includes(sanitizedQuery)
-    );
+    // Step 1: Convert price strings to numbers & filter out non-phone products
+    const filteredResults = results
+      .map((product) => ({
+        ...product,
+        price:
+          typeof product.price === "string"
+            ? parseFloat(product.price.replace(/[^\d.]/g, "")) || null
+            : product.price,
+      }))
+      .filter((product) =>
+        product.title.toLowerCase().includes(sanitizedQuery)
+      );
 
     if (filteredResults.length === 0) {
       cache.set(sanitizedQuery, [], 3600);
