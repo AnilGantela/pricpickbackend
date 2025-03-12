@@ -639,11 +639,11 @@ const getRetailersProducts = async (req, res) => {
 
     const sanitizedQuery = searchName.trim().replace(/[^\w\s\-\+\.]/g, "");
 
-    // Fetch products with retailer details
-    const products = await Product.find(
-      { name: { $regex: sanitizedQuery, $options: "i" } } // Case-insensitive search
-    )
-      .populate("retailerId") // Populate retailer details
+    // Fetch all products with full retailer details
+    const products = await Product.find({
+      name: { $regex: sanitizedQuery, $options: "i" }, // Case-insensitive search
+    })
+      .populate("retailerId") // Get all retailer details
       .lean(); // Convert to plain JavaScript objects
 
     if (!products || products.length === 0) {
