@@ -21,7 +21,7 @@ const retailerSchema = new mongoose.Schema({
   },
   products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
 
-  details: {
+  retailerDetailsId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "RetailerDetails",
   },

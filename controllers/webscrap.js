@@ -643,7 +643,10 @@ const getRetailersProducts = async (req, res) => {
     const products = await Product.find({
       name: { $regex: sanitizedQuery, $options: "i" }, // Case-insensitive search
     })
-      .populate("retailerId") // Get all retailer details
+      .populate({
+        path: "retailerId",
+        populate: { path: "retailerDetailsId" }, // Fetch RetailerDetails inside Retailer
+      }) // Get all retailer details
       .lean(); // Convert to plain JavaScript objects
 
     if (!products || products.length === 0) {
