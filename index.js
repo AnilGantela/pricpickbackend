@@ -9,7 +9,7 @@ const userProducts = require("./routes/userProducts");
 const cors = require("cors");
 app.use(
   cors({
-    origin: "https://pricepickretailer.vercel.app", // Allow only this domain
+    origin: ["https://pricepickretailer.vercel.app", "http://localhost:5173"], // Allow only this domain
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
     credentials: true, // Allow cookies (if needed)
   })
