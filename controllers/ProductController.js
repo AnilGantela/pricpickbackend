@@ -27,36 +27,47 @@ const verifyToken = (req) => {
 // Create a new product
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, category, stock, discount } = req.body;
+    const { name, price, category, stock, discount } = req.body;
     const decoded = verifyToken(req);
     const retailerId = decoded.id;
 
+    // Validate retailer ID
     if (!mongoose.Types.ObjectId.isValid(retailerId)) {
       return res.status(400).json({ message: "Invalid retailer ID." });
     }
 
+    // Check if retailer exists
     const retailer = await Retailer.findById(retailerId);
     if (!retailer) {
       return res.status(404).json({ message: "Retailer not found." });
     }
 
+    // Validate category
+    if (!categoryValues.includes(category)) {
+      return res.status(400).json({ message: "Invalid category." });
+    }
+
+    // Create new product
     const newProduct = new Product({
       name,
-      description,
       price,
       category,
       stock,
-      discount,
+      discount: discount || 0, // Default discount to 0 if not provided
       retailerId,
     });
 
     const savedProduct = await newProduct.save();
+
+    // Ensure retailer's products array exists before pushing
+    retailer.products = retailer.products || [];
     retailer.products.push(savedProduct._id);
     await retailer.save();
 
-    res
-      .status(201)
-      .json({ message: "Product created successfully", product: savedProduct });
+    res.status(201).json({
+      message: "Product created successfully",
+      product: savedProduct,
+    });
   } catch (error) {
     console.error("Error creating product:", error.message);
     res.status(500).json({ message: "Server error." });
