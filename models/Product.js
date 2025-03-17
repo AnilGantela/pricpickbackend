@@ -10,11 +10,6 @@ const productSchema = new mongoose.Schema(
       required: true,
       enum: categoryValues, // ✅ Main category validation
     },
-    subcategory: {
-      type: String,
-      required: true,
-      enum: subcategoryValues, // ✅ Subcategory validation
-    },
     stock: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     retailerId: {
