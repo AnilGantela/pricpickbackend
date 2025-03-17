@@ -1,4 +1,4 @@
-export const ElectronicCategories = [
+const categoryValues = [
   "Mobile & Accessories",
   "Computers & Laptops",
   "TV & Entertainment",
@@ -10,5 +10,4 @@ export const ElectronicCategories = [
   "Car Electronics",
 ];
 
-// Extract main categories
-export const categoryValues = ElectronicCategories;
+module.exports = { categoryValues };
