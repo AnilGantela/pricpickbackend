@@ -8,5 +8,6 @@ router.delete("/delete/:id", productController.deleteProduct);
 router.put("/apply-discount/:id", productController.applyDiscount);
 router.get("/all", productController.getRetailerProducts);
 router.get("/categories", productController.getProductCategoryData);
+router.get("/addCategories", productController.getAddProductCategories);
 
 module.exports = router;

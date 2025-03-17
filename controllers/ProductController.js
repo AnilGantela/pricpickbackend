@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const dotEnv = require("dotenv");
 const mongoose = require("mongoose");
+const { ElectronicCategories } = require("../categories");
 dotEnv.config();
 
 const Retailer = require("../models/Retailer");
@@ -213,6 +214,14 @@ const getProductCategoryData = async (req, res) => {
   }
 };
 
+const getAddProductCategories = async (req, res) => {
+  try {
+    res.json({ success: true, categories: ElectronicCategories });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -220,4 +229,5 @@ module.exports = {
   applyDiscount,
   getRetailerProducts,
   getProductCategoryData,
+  getAddProductCategories,
 };
