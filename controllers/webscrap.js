@@ -771,7 +771,7 @@ const getProducts = async (req, res) => {
       averagePrice,
       priceThreshold,
       history,
-      results: finalResults,
+      results,
     });
   } catch (error) {
     console.error("❌ Error in getProducts:", error);
