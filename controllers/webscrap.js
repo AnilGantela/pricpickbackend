@@ -502,87 +502,6 @@ class ProductScraper {
     }, selectors);
   }
 
-  async scrapeAndSaveScreenshot() {
-    const this.browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-
-    const page = await browser.newPage();
-    const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
-      this.searchQuery
-    )}`;
-    console.log(`🔍 Searching for pricehistory: ${this.searchQuery}`);
-
-    await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    try {
-      await this.page.waitForSelector("a.gs-title", { timeout: 10000 });
-    } catch (error) {
-      console.log("❌ No search results found!");
-      return null;
-    }
-
-    const productLinks = await this.page.evaluate(() => {
-      return Array.from(document.querySelectorAll("a.gs-title")).map((el) => ({
-        title: el.innerText.trim(),
-        link: el.href,
-      }));
-    });
-
-    if (productLinks.length < 2) {
-      console.log(
-        "❌ Less than two search results found! Cannot select the second result."
-      );
-      return null;
-    }
-
-    const matchedProduct = productLinks.find((product) =>
-      product.title.toLowerCase().includes(this.searchQuery.toLowerCase())
-    );
-
-    if (!matchedProduct) {
-      console.log(`❌ No product found matching: "${this.searchQuery}"`);
-      return null;
-    }
-
-    console.log(`✅ Match found: ${matchedProduct.title}`);
-    console.log(`🔗 Navigating to: ${matchedProduct.link}`);
-
-    await this.page.goto(matchedProduct.link, { waitUntil: "networkidle2" });
-
-    try {
-      await this.page.waitForSelector("h1", { timeout: 10000 });
-    } catch (error) {
-      console.log("❌ Product page failed to load!");
-      return null;
-    }
-
-    try {
-      const buttonSelector =
-        ".px-4.py-2.bg-gray-400.text-white.font-medium.rounded.hidden.md\\:block";
-      await this.page.waitForSelector(buttonSelector, { timeout: 5000 });
-      await this.page.click(buttonSelector);
-      console.log("✅ Clicked the button successfully!");
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    } catch (error) {
-      console.log("⚠️ Button not found or not clickable!");
-    }
-
-    let extractedText = null;
-    try {
-      extractedText = await this.page.$eval(".hljs-string", (el) =>
-        el.innerText.trim()
-      );
-      console.log(`📜 Extracted Text (hljs-string): ${extractedText}`);
-    } catch (error) {
-      console.log("⚠️ No element found with class 'hljs-string'!");
-    }
-
-    return extractedText ? extractedText : null;
-  }
-
   async scrollPage() {
     let previousHeight = 0;
     while (true) {
@@ -606,7 +525,6 @@ class ProductScraper {
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
-   
 
     await this.browser.close();
     return results;
@@ -684,10 +602,12 @@ class PriceHistoryScraper {
       }
 
       const productLinks = await this.page.evaluate(() => {
-        return Array.from(document.querySelectorAll("a.gs-title")).map((el) => ({
-          title: el.innerText.trim(),
-          link: el.href,
-        }));
+        return Array.from(document.querySelectorAll("a.gs-title")).map(
+          (el) => ({
+            title: el.innerText.trim(),
+            link: el.href,
+          })
+        );
       });
 
       if (productLinks.length < 2) {
@@ -861,7 +781,6 @@ const getProducts = async (req, res) => {
     });
   }
 };
-
 
 const getRetailersProducts = async (req, res) => {
   try {
