@@ -150,14 +150,16 @@ class ProductScraper {
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Selectors
+
     const selectors = {
       searchBox: ".search-input",
       searchButton: ".input-search-icon",
-      productList: ".card-info-container",
+      productList: ".product-card",
       title: ".product-card-title",
       price: ".price",
       productLink: "a.details-container",
     };
+
     console.log(
       `⌨️ Searching for '${this.searchQuery}' on Reliance Digital...`
     );
@@ -274,7 +276,7 @@ class ProductScraper {
                 : "Price not available",
               retailer: "Croma",
               productLink: productLinkElement
-                ? "https://www.croma.com/" +
+                ? "https://www.croma.com" +
                   productLinkElement.getAttribute("href")
                 : "No link available",
             };
@@ -500,6 +502,81 @@ class ProductScraper {
     }, selectors);
   }
 
+  async scrapeAndSaveScreenshot() {
+    const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
+      this.searchQuery
+    )}`;
+    console.log(`🔍 Searching for: ${this.searchQuery}`);
+
+    await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    try {
+      await this.page.waitForSelector("a.gs-title", { timeout: 10000 });
+    } catch (error) {
+      console.log("❌ No search results found!");
+      return null;
+    }
+
+    const productLinks = await this.page.evaluate(() => {
+      return Array.from(document.querySelectorAll("a.gs-title")).map((el) => ({
+        title: el.innerText.trim(),
+        link: el.href,
+      }));
+    });
+
+    if (productLinks.length < 2) {
+      console.log(
+        "❌ Less than two search results found! Cannot select the second result."
+      );
+      return null;
+    }
+
+    const matchedProduct = productLinks.find((product) =>
+      product.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
+
+    if (!matchedProduct) {
+      console.log(`❌ No product found matching: "${this.searchQuery}"`);
+      return null;
+    }
+
+    console.log(`✅ Match found: ${matchedProduct.title}`);
+    console.log(`🔗 Navigating to: ${matchedProduct.link}`);
+
+    await this.page.goto(matchedProduct.link, { waitUntil: "networkidle2" });
+
+    try {
+      await this.page.waitForSelector("h1", { timeout: 10000 });
+    } catch (error) {
+      console.log("❌ Product page failed to load!");
+      return null;
+    }
+
+    try {
+      const buttonSelector =
+        ".px-4.py-2.bg-gray-400.text-white.font-medium.rounded.hidden.md\\:block";
+      await this.page.waitForSelector(buttonSelector, { timeout: 5000 });
+      await this.page.click(buttonSelector);
+      console.log("✅ Clicked the button successfully!");
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    } catch (error) {
+      console.log("⚠️ Button not found or not clickable!");
+    }
+
+    let extractedText = null;
+    try {
+      extractedText = await this.page.$eval(".hljs-string", (el) =>
+        el.innerText.trim()
+      );
+      console.log(`📜 Extracted Text (hljs-string): ${extractedText}`);
+    } catch (error) {
+      console.log("⚠️ No element found with class 'hljs-string'!");
+    }
+
+    return extractedText ? { pricehistory: extractedText } : null;
+  }
+
   async scrollPage() {
     let previousHeight = 0;
     while (true) {
@@ -522,7 +599,9 @@ class ProductScraper {
     results.push(...(await this.searchFlipkart()));
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
-    //results.push(...(await this.searchRelianceDigital()));
+    results.push(...(await this.searchRelianceDigital()));
+    const priceHistoryData = await this.scrapeAndSaveScreenshot();
+    if (priceHistoryData) results.push(priceHistoryData);
 
     await this.browser.close();
     return results;
@@ -554,59 +633,55 @@ const getProducts = async (req, res) => {
     let results = await scraper.scrapeAll();
 
     if (!results || results.length === 0) {
-      cache.set(sanitizedQuery, [], 3600); // Cache empty array instead of null
-      return res.json({ success: true, message: "results empty", results: [] });
+      cache.set(sanitizedQuery, [], 3600); // Cache empty array
+      return res.json({
+        success: true,
+        message: "No products found",
+        results: [],
+      });
     }
 
-    // Step 1: Convert price strings to numbers & filter out non-phone products
-    const filteredResults = results.map((product) => {
-      let cleanedPrice = null;
-
-      if (typeof product.price === "string") {
-        cleanedPrice = product.price
-          .replace(/[,₹Rs]/g, "") // Remove currency symbols & commas
-          .trim();
-
-        cleanedPrice = parseFloat(cleanedPrice) || null;
-      } else {
-        cleanedPrice = product.price;
-      }
-
-      return {
+    // Step 1: Filter out products with missing prices & convert price strings to numbers
+    const filteredResults = results
+      .filter((product) => product.price && typeof product.price === "string") // Ensure valid price field
+      .map((product) => ({
         ...product,
-        price: cleanedPrice,
-      };
-    });
+        price: parseFloat(product.price.replace(/[,₹Rs]/g, "").trim()) || null,
+      }))
+      .filter((product) => product.price !== null); // Remove null prices
 
     if (filteredResults.length === 0) {
       cache.set(sanitizedQuery, [], 3600);
       return res.json({
         success: true,
-        message: "Filtering resulted in no products",
+        message: "No valid prices found",
         results: [],
       });
     }
 
-    // Step 2: Calculate the Average Price (Ignore `null` Prices)
-    const validPrices = filteredResults
-      .map((p) => p.price)
-      .filter((price) => price !== null);
+    // Step 2: Calculate the Average Price
+    const totalPrice = filteredResults.reduce(
+      (sum, product) => sum + product.price,
+      0
+    );
+    const averagePrice = totalPrice / filteredResults.length;
 
-    if (validPrices.length === 0) {
-      cache.set(sanitizedQuery, [], 3600);
-      return res.json({ success: true, message: "validpricess", results: [] });
-    }
-
-    const totalPrice = validPrices.reduce((sum, price) => sum + price, 0);
-    const averagePrice = totalPrice / validPrices.length;
-
-    // Step 3: Compute the Threshold (Average / 2)
-    const priceThreshold = averagePrice / 2;
+    // Step 3: Compute Threshold (Prevent Unrealistic Thresholds)
+    const priceThreshold = Math.max(averagePrice / 2, 1000);
 
     // Step 4: Remove Products Below the Threshold
     const finalResults = filteredResults.filter(
-      (product) => product.price !== null && product.price >= priceThreshold
+      (product) => product.price >= priceThreshold
     );
+
+    if (finalResults.length === 0) {
+      cache.set(sanitizedQuery, [], 3600);
+      return res.json({
+        success: true,
+        message: "No products met the threshold",
+        results: [],
+      });
+    }
 
     // Cache results
     cache.set(sanitizedQuery, finalResults, 3600);
