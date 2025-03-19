@@ -718,13 +718,24 @@ const getProducts = async (req, res) => {
     }
 
     // Step 1: Filter out products with missing prices & convert price strings to numbers
-    const filteredResults = results
-      .filter((product) => product.price && typeof product.price === "string") // Ensure valid price field
-      .map((product) => ({
+    const filteredResults = results.map((product) => {
+      let cleanedPrice = null;
+
+      if (typeof product.price === "string") {
+        cleanedPrice = product.price
+          .replace(/[,₹Rs]/g, "") // Remove currency symbols & commas
+          .trim();
+
+        cleanedPrice = parseFloat(cleanedPrice) || null;
+      } else {
+        cleanedPrice = product.price;
+      }
+
+      return {
         ...product,
-        price: parseFloat(product.price.replace(/[,₹Rs]/g, "").trim()) || null,
-      }))
-      .filter((product) => product.price !== null); // Remove null prices
+        price: cleanedPrice,
+      };
+    });
 
     if (filteredResults.length === 0) {
       cache.set(sanitizedQuery, [], 3600);
@@ -743,7 +754,7 @@ const getProducts = async (req, res) => {
     const averagePrice = totalPrice / filteredResults.length;
 
     // Step 3: Compute Threshold (Prevent Unrealistic Thresholds)
-    const priceThreshold = Math.max(averagePrice / 2, 1000);
+    const priceThreshold = Math.max(averagePrice / 3, 1000);
 
     // Step 4: Remove Products Below the Threshold
     const finalResults = filteredResults.filter(
