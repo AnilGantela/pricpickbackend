@@ -623,7 +623,6 @@ class PriceHistoryScraper {
   async initialize() {
     try {
       this.browser = await puppeteer.launch({
-        headless: true,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -636,7 +635,6 @@ class PriceHistoryScraper {
       });
 
       this.page = await this.browser.newPage();
-
       await this.page.setUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
       );
@@ -661,7 +659,6 @@ class PriceHistoryScraper {
       console.log("✅ Browser initialized successfully.");
     } catch (error) {
       console.error("❌ Failed to launch Puppeteer:", error);
-      throw error;
     }
   }
 
