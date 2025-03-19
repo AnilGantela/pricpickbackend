@@ -589,7 +589,7 @@ class PriceHistoryScraper {
       const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
         this.searchQuery
       )}`;
-      console.log(`🔍 Searching for price history: ${this.searchQuery}`);
+      console.log(`🔍 Searching for price history : ${this.searchQuery}`);
 
       await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
       await new Promise((resolve) => setTimeout(resolve, 4000));
