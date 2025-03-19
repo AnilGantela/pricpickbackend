@@ -708,14 +708,12 @@ const getProducts = async (req, res) => {
 
     // Close browser for price history scraper
     await pricehistory.closeBrowser();
-
     if (!results || results.length === 0) {
-      cache.set(sanitizedQuery, [], 3600);
+      cache.set(sanitizedQuery, [], 3600); // Cache empty array
       return res.json({
         success: true,
         message: "No products found",
         results: [],
-        history,
       });
     }
 
@@ -734,7 +732,6 @@ const getProducts = async (req, res) => {
         success: true,
         message: "No valid prices found",
         results: [],
-        history,
       });
     }
 
@@ -746,7 +743,7 @@ const getProducts = async (req, res) => {
     const averagePrice = totalPrice / filteredResults.length;
 
     // Step 3: Compute Threshold (Prevent Unrealistic Thresholds)
-    const priceThreshold = averagePrice / 6;
+    const priceThreshold = Math.max(averagePrice / 2, 1000);
 
     // Step 4: Remove Products Below the Threshold
     const finalResults = filteredResults.filter(
@@ -759,7 +756,6 @@ const getProducts = async (req, res) => {
         success: true,
         message: "No products met the threshold",
         results: [],
-        history,
       });
     }
 
