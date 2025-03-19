@@ -621,28 +621,70 @@ class PriceHistoryScraper {
   }
 
   async initialize() {
-    this.browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-    this.page = await this.browser.newPage();
+    try {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--disable-gpu",
+        ],
+        executablePath: "/usr/bin/google-chrome-stable",
+        ignoreDefaultArgs: ["--disable-extensions"],
+      });
+
+      this.page = await this.browser.newPage();
+
+      await this.page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+      );
+
+      await this.page.setExtraHTTPHeaders({
+        "Accept-Language": "en-US,en;q=0.9",
+        Referer: "https://www.google.com/",
+      });
+
+      await this.page.evaluateOnNewDocument(() => {
+        navigator.geolocation.getCurrentPosition = (cb) => {
+          cb({
+            coords: {
+              latitude: 17.6868,
+              longitude: 83.2185,
+              accuracy: 100,
+            },
+          });
+        };
+      });
+
+      console.log("✅ Browser initialized successfully.");
+    } catch (error) {
+      console.error("❌ Failed to launch Puppeteer:", error);
+      throw error;
+    }
   }
 
   async scrapePriceHistory() {
-    if (!this.browser || !this.page) {
-      await this.initialize();
-    }
-
-    const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
-      this.searchQuery
-    )}`;
-    console.log(`🔍 Searching for price history: ${this.searchQuery}`);
-
     try {
-      await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
-      await this.page.waitForTimeout(5000);
+      if (!this.browser || !this.page) {
+        await this.initialize();
+      }
 
-      await this.page.waitForSelector("a.gs-title", { timeout: 10000 });
+      const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
+        this.searchQuery
+      )}`;
+      console.log(`🔍 Searching for price history: ${this.searchQuery}`);
+
+      await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+
+      try {
+        await this.page.waitForSelector("a.gs-title", { timeout: 10000 });
+      } catch (error) {
+        console.log("❌ No search results found!");
+        return null;
+      }
 
       const productLinks = await this.page.evaluate(() => {
         return Array.from(document.querySelectorAll("a.gs-title")).map((el) => ({
@@ -670,7 +712,12 @@ class PriceHistoryScraper {
 
       await this.page.goto(matchedProduct.link, { waitUntil: "networkidle2" });
 
-      await this.page.waitForSelector("h1", { timeout: 10000 });
+      try {
+        await this.page.waitForSelector("h1", { timeout: 10000 });
+      } catch (error) {
+        console.log("❌ Product page failed to load!");
+        return null;
+      }
 
       try {
         const buttonSelector =
@@ -678,7 +725,7 @@ class PriceHistoryScraper {
         await this.page.waitForSelector(buttonSelector, { timeout: 5000 });
         await this.page.click(buttonSelector);
         console.log("✅ Clicked the button successfully!");
-        await this.page.waitForTimeout(3000);
+        await new Promise((resolve) => setTimeout(resolve, 4000));
       } catch (error) {
         console.log("⚠️ Button not found or not clickable!");
       }
@@ -693,10 +740,12 @@ class PriceHistoryScraper {
         console.log("⚠️ No element found with class 'hljs-string'!");
       }
 
-      return extractedText ?  extractedText  : null;
+      return extractedText ? extractedText : null;
     } catch (error) {
       console.error("❌ Error in scrapePriceHistory:", error);
       return null;
+    } finally {
+      await this.closeBrowser();
     }
   }
 
@@ -705,6 +754,7 @@ class PriceHistoryScraper {
       await this.browser.close();
       this.browser = null;
       this.page = null;
+      console.log("✅ Browser closed successfully.");
     }
   }
 }
