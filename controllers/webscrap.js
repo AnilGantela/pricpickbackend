@@ -520,10 +520,10 @@ class ProductScraper {
     let results = [];
 
     results.push(...(await this.searchSnapdeal()));
-    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchFlipkart()));
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
+    results.push(...(await this.searchAmazon()));
     results.push(...(await this.searchRelianceDigital()));
 
     await this.browser.close();
