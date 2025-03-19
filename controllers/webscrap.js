@@ -692,10 +692,10 @@ const getProducts = async (req, res) => {
       .toLowerCase();
 
     // Check cache first
-    //const cachedResults = cache.get(sanitizedQuery);
-    //if (cachedResults !== undefined) {
-    //return res.json({ success: true, results: cachedResults });
-    //}
+    const cachedResults = cache.get(sanitizedQuery);
+    if (cachedResults !== undefined) {
+      return res.json({ success: true, results: cachedResults });
+    }
 
     const scraper = new ProductScraper(sanitizedQuery);
     const pricehistory = new PriceHistoryScraper(sanitizedQuery);
