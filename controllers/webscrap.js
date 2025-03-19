@@ -746,7 +746,7 @@ const getProducts = async (req, res) => {
     const averagePrice = totalPrice / filteredResults.length;
 
     // Step 3: Compute Threshold (Prevent Unrealistic Thresholds)
-    const priceThreshold = Math.max(averagePrice / 2, 1000);
+    const priceThreshold = averagePrice / 3;
 
     // Step 4: Remove Products Below the Threshold
     const finalResults = filteredResults.filter(
