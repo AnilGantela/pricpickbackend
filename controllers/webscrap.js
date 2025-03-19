@@ -503,6 +503,12 @@ class ProductScraper {
   }
 
   async scrapeAndSaveScreenshot() {
+    const this.browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
     const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
       this.searchQuery
     )}`;
@@ -600,9 +606,106 @@ class ProductScraper {
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
+   
 
     await this.browser.close();
     return results;
+  }
+}
+
+class PriceHistoryScraper {
+  constructor(searchQuery) {
+    this.searchQuery = searchQuery;
+    this.browser = null;
+    this.page = null;
+  }
+
+  async initialize() {
+    this.browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    this.page = await this.browser.newPage();
+  }
+
+  async scrapePriceHistory() {
+    if (!this.browser || !this.page) {
+      await this.initialize();
+    }
+
+    const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
+      this.searchQuery
+    )}`;
+    console.log(`🔍 Searching for price history: ${this.searchQuery}`);
+
+    try {
+      await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
+      await this.page.waitForTimeout(5000);
+
+      await this.page.waitForSelector("a.gs-title", { timeout: 10000 });
+
+      const productLinks = await this.page.evaluate(() => {
+        return Array.from(document.querySelectorAll("a.gs-title")).map((el) => ({
+          title: el.innerText.trim(),
+          link: el.href,
+        }));
+      });
+
+      if (productLinks.length < 2) {
+        console.log("❌ Less than two search results found!");
+        return null;
+      }
+
+      const matchedProduct = productLinks.find((product) =>
+        product.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+      );
+
+      if (!matchedProduct) {
+        console.log(`❌ No product found matching: "${this.searchQuery}"`);
+        return null;
+      }
+
+      console.log(`✅ Match found: ${matchedProduct.title}`);
+      console.log(`🔗 Navigating to: ${matchedProduct.link}`);
+
+      await this.page.goto(matchedProduct.link, { waitUntil: "networkidle2" });
+
+      await this.page.waitForSelector("h1", { timeout: 10000 });
+
+      try {
+        const buttonSelector =
+          ".px-4.py-2.bg-gray-400.text-white.font-medium.rounded.hidden.md\\:block";
+        await this.page.waitForSelector(buttonSelector, { timeout: 5000 });
+        await this.page.click(buttonSelector);
+        console.log("✅ Clicked the button successfully!");
+        await this.page.waitForTimeout(3000);
+      } catch (error) {
+        console.log("⚠️ Button not found or not clickable!");
+      }
+
+      let extractedText = null;
+      try {
+        extractedText = await this.page.$eval(".hljs-string", (el) =>
+          el.innerText.trim()
+        );
+        console.log(`📜 Extracted Text (hljs-string): ${extractedText}`);
+      } catch (error) {
+        console.log("⚠️ No element found with class 'hljs-string'!");
+      }
+
+      return extractedText ?  extractedText  : null;
+    } catch (error) {
+      console.error("❌ Error in scrapePriceHistory:", error);
+      return null;
+    }
+  }
+
+  async closeBrowser() {
+    if (this.browser) {
+      await this.browser.close();
+      this.browser = null;
+      this.page = null;
+    }
   }
 }
 
@@ -628,14 +731,24 @@ const getProducts = async (req, res) => {
     }
 
     const scraper = new ProductScraper(sanitizedQuery);
-    let results = await scraper.scrapeAll();
+    const pricehistory = new PriceHistoryScraper(sanitizedQuery);
+
+    // Run both scrapers concurrently
+    const [results, history] = await Promise.all([
+      scraper.scrapeAll(),
+      pricehistory.scrapePriceHistory(),
+    ]);
+
+    // Close browser for price history scraper
+    await pricehistory.closeBrowser();
 
     if (!results || results.length === 0) {
-      cache.set(sanitizedQuery, [], 3600); // Cache empty array
+      cache.set(sanitizedQuery, [], 3600);
       return res.json({
         success: true,
         message: "No products found",
         results: [],
+        history,
       });
     }
 
@@ -654,6 +767,7 @@ const getProducts = async (req, res) => {
         success: true,
         message: "No valid prices found",
         results: [],
+        history,
       });
     }
 
@@ -678,10 +792,9 @@ const getProducts = async (req, res) => {
         success: true,
         message: "No products met the threshold",
         results: [],
+        history,
       });
     }
-
-    const priceHistoryData = await scraper.scrapeAndSaveScreenshot();
 
     // Cache results
     cache.set(sanitizedQuery, finalResults, 3600);
@@ -689,8 +802,8 @@ const getProducts = async (req, res) => {
     res.json({
       success: true,
       averagePrice,
-      priceHistoryData,
       priceThreshold,
+      history,
       results: finalResults,
     });
   } catch (error) {
@@ -701,6 +814,7 @@ const getProducts = async (req, res) => {
     });
   }
 };
+
 
 const getRetailersProducts = async (req, res) => {
   try {
