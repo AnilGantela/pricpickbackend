@@ -506,7 +506,7 @@ class ProductScraper {
     const searchURL = `https://pricehistoryapp.com/search?q=${encodeURIComponent(
       this.searchQuery
     )}`;
-    console.log(`🔍 Searching for: ${this.searchQuery}`);
+    console.log(`🔍 Searching for pricehistory: ${this.searchQuery}`);
 
     await this.page.goto(searchURL, { waitUntil: "domcontentloaded" });
     await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -574,7 +574,7 @@ class ProductScraper {
       console.log("⚠️ No element found with class 'hljs-string'!");
     }
 
-    return extractedText ? { pricehistory: extractedText } : null;
+    return extractedText ? extractedText : null;
   }
 
   async scrollPage() {
@@ -600,8 +600,6 @@ class ProductScraper {
     results.push(...(await this.searchCroma()));
     results.push(...(await this.searchJiomart()));
     results.push(...(await this.searchRelianceDigital()));
-    const priceHistoryData = await this.scrapeAndSaveScreenshot();
-    if (priceHistoryData) results.push(priceHistoryData);
 
     await this.browser.close();
     return results;
@@ -683,12 +681,15 @@ const getProducts = async (req, res) => {
       });
     }
 
+    const priceHistoryData = await scraper.scrapeAndSaveScreenshot();
+
     // Cache results
     cache.set(sanitizedQuery, finalResults, 3600);
 
     res.json({
       success: true,
       averagePrice,
+      priceHistoryData,
       priceThreshold,
       results: finalResults,
     });
