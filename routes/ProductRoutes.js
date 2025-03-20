@@ -5,21 +5,11 @@ const productController = require("../controllers/ProductController");
 
 const upload = multer({ dest: "uploads/" });
 
-router.post("/create", upload.array("images", 5), async (req, res) => {
-  try {
-    console.log("Received Files:", req.files); // Log uploaded images
-    console.log("Request Body:", req.body); // Log form data
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: "No images uploaded." });
-    }
-
-    res.status(200).json({ message: "Images uploaded successfully!" });
-  } catch (error) {
-    console.error("Upload Error:", error);
-    res.status(500).json({ message: "Server error", error });
-  }
-});
+router.post(
+  "/create",
+  upload.array("images", 5),
+  productController.createProduct
+);
 
 router.put("/update/:id", productController.updateProduct);
 router.delete("/delete/:id", productController.deleteProduct);

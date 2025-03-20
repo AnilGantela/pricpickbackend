@@ -51,18 +51,15 @@ const createProduct = async (req, res) => {
     let imageUrls = [];
 
     // ✅ Upload images if provided
-    if (req.files && req.files.images) {
-      const imageFiles = Array.isArray(req.files.images)
-        ? req.files.images
-        : [req.files.images];
-
+    if (req.files && req.files.length > 0) {
       try {
-        const uploadPromises = imageFiles.map((file) =>
-          uploadImage(file.path, "pricepick/products")
+        const uploadPromises = req.files.map(
+          (file) => uploadImage(file.path, "pricepick/products") // Cloudinary or custom upload function
         );
 
         imageUrls = await Promise.all(uploadPromises);
       } catch (uploadError) {
+        console.error("Image upload error:", uploadError);
         return res.status(500).json({ message: "Image upload failed." });
       }
     }
@@ -72,7 +69,7 @@ const createProduct = async (req, res) => {
       name,
       description,
       price,
-      images: imageUrls,
+      images: imageUrls, // 🔥 Save image URLs
       category,
       stock,
       discount: discount || 0,
