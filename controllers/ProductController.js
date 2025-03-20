@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const dotEnv = require("dotenv");
 const mongoose = require("mongoose");
 const { categoryValues } = require("../categories");
+const { uploadImage } = require("../utils/uploadImage");
 dotEnv.config();
 
 const Retailer = require("../models/Retailer");
@@ -27,7 +28,7 @@ const verifyToken = (req) => {
 // Create a new product
 const createProduct = async (req, res) => {
   try {
-    const { name, price, category, stock, discount } = req.body;
+    const { name, description, price, category, stock, discount } = req.body;
     const decoded = verifyToken(req);
     const retailerId = decoded.id;
 
@@ -47,19 +48,40 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Invalid category." });
     }
 
-    // Create new product
+    let imageUrls = [];
+
+    // ✅ Upload images if provided
+    if (req.files && req.files.images) {
+      const imageFiles = Array.isArray(req.files.images)
+        ? req.files.images
+        : [req.files.images];
+
+      try {
+        const uploadPromises = imageFiles.map((file) =>
+          uploadImage(file.path, "pricepick/products")
+        );
+
+        imageUrls = await Promise.all(uploadPromises);
+      } catch (uploadError) {
+        return res.status(500).json({ message: "Image upload failed." });
+      }
+    }
+
+    // ✅ Create new product
     const newProduct = new Product({
       name,
+      description,
       price,
+      images: imageUrls,
       category,
       stock,
-      discount: discount || 0, // Default discount to 0 if not provided
+      discount: discount || 0,
       retailerId,
     });
 
     const savedProduct = await newProduct.save();
 
-    // Ensure retailer's products array exists before pushing
+    // ✅ Ensure retailer's products array exists before pushing
     retailer.products = retailer.products || [];
     retailer.products.push(savedProduct._id);
     await retailer.save();

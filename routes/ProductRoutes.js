@@ -1,8 +1,15 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 const productController = require("../controllers/ProductController");
 
-router.post("/create", productController.createProduct);
+const upload = multer({ dest: "uploads/" });
+
+router.post(
+  "/create",
+  upload.array("images", 5),
+  productController.createProduct
+);
 router.put("/update/:id", productController.updateProduct);
 router.delete("/delete/:id", productController.deleteProduct);
 router.put("/apply-discount/:id", productController.applyDiscount);

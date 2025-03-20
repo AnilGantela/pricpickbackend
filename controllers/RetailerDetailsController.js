@@ -1,8 +1,7 @@
-const cloudinary = require("../config/cloudinary.js");
+const { uploadImage } = require("../utils/uploadImage");
 const RetailerDetails = require("../models/RetailerDetails.js");
 const Retailer = require("../models/Retailer.js");
 
-// Create Retailer Details
 const createRetailerDetails = async (req, res) => {
   try {
     const {
@@ -13,68 +12,39 @@ const createRetailerDetails = async (req, res) => {
       city,
       state,
       shoptime,
-      photo,
     } = req.body;
     const retailerId = req.user.id;
 
-    if (
-      !shopname ||
-      !phoneNumber ||
-      !street ||
-      !pincode ||
-      !city ||
-      !state ||
-      !shoptime
-    ) {
+    // ✅ Validate required fields
+    if (!shopname || !phoneNumber || !street || !pincode || !city || !state || !shoptime) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Ensure the retailer does not already have a profile
+    // ✅ Check if retailer details already exist
     const existingRetailer = await RetailerDetails.findOne({ retailerId });
     if (existingRetailer) {
-      return res
-        .status(400)
-        .json({ message: "Retailer details already exist" });
+      return res.status(400).json({ message: "Retailer details already exist" });
     }
 
-    // Handle image upload with compression
+    // ✅ Check if phone number is already used
+    const existingPhone = await RetailerDetails.findOne({ phoneNumber });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already in use" });
+    }
+
+    // ✅ Handle image upload (supporting both file & base64)
     let imageUrl = "";
-    if (photo) {
-      try {
-        console.log(
-          "Received Image Data (First 100 chars):",
-          photo.substring(0, 100)
-        ); // Debug log
-        const uploadedImage = await cloudinary.uploader.upload(photo, {
-          folder: "retailers",
-          transformation: [
-            { width: 500, height: 500, crop: "fill" },
-            { quality: "auto:low" },
-            { fetch_format: "auto" },
-            { flags: "progressive" },
-            { dpr: "auto" },
-          ],
-        });
-        imageUrl = uploadedImage.secure_url;
-        console.log("Image uploaded successfully:", imageUrl);
-      } catch (uploadError) {
-        console.error("Cloudinary Upload Error:", uploadError);
-        return res
-          .status(500)
-          .json({ message: "Image upload failed", error: uploadError.message });
-      }
+    if (req.files && req.files.photo) {
+      imageUrl = await uploadImage(req.files.photo.path, "pricepick/retailers");
+    } else if (req.body.photo) {
+      imageUrl = await uploadImage(req.body.photo, "pricepick/retailers");
     }
 
-    // Save retailer details
+    // ✅ Save retailer details
     const retailerDetails = new RetailerDetails({
       shopname,
       phoneNumber,
-      address: {
-        street,
-        pincode,
-        city,
-        state,
-      },
+      address: { street, pincode, city, state },
       shoptime,
       photo: imageUrl,
       retailerId,
@@ -82,23 +52,51 @@ const createRetailerDetails = async (req, res) => {
 
     await retailerDetails.save();
 
-    // ✅ Update the Retailer with retailerDetailsId
-    await Retailer.updateOne(
-      { _id: retailerId },
-      {
-        detailsAdded: true,
-        retailerDetailsId: retailerDetails._id, // ✅ Store the retailerDetails ID
-      }
-    );
+    // ✅ Update the Retailer document with retailerDetailsId
+    await Retailer.findByIdAndUpdate(retailerId, {
+      detailsAdded: true,
+      retailerDetailsId: retailerDetails._id,
+    });
 
     res.status(201).json({
       message: "Retailer details added successfully",
       retailerDetails,
     });
   } catch (error) {
+    console.error("Error adding retailer details:", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+module.exports = { createRetailerDetails };
+📌 uploadImage Function (Modular Cloudinary Upload)
+Put this in utils/uploadImage.js:
+
+javascript
+Copy
+Edit
+const cloudinary = require("../config/cloudinary");
+
+const uploadImage = async (image, folder = "pricepick/retailers") => {
+  try {
+    const uploadedImage = await cloudinary.uploader.upload(image, {
+      folder,
+      transformation: [
+        { width: 500, height: 500, crop: "fill" },
+        { quality: "auto:low" },
+        { fetch_format: "auto" },
+        { flags: "progressive" },
+        { dpr: "auto" },
+      ],
+    });
+
+    return uploadedImage.secure_url;
+  } catch (error) {
+    console.error("Cloudinary Upload Error:", error.message);
+    throw new Error("Image upload failed.");
+  }
+};
+
 
 // Get Retailer Details
 const getRetailerDetails = async (req, res) => {
