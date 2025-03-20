@@ -692,9 +692,9 @@ const getProducts = async (req, res) => {
       .toLowerCase();
 
     // Check cache first
-    const cachedResults = cache.get(sanitizedQuery);
-    if (cachedResults !== undefined) {
-      return res.json({ success: true, results: cachedResults });
+    const cachedData = cache.get(sanitizedQuery);
+    if (cachedData !== undefined) {
+      return res.json({ success: true, ...cachedData });
     }
 
     const scraper = new ProductScraper(sanitizedQuery);
@@ -708,13 +708,18 @@ const getProducts = async (req, res) => {
 
     // Close browser for price history scraper
     await pricehistory.closeBrowser();
+
     if (!results || results.length === 0) {
-      cache.set(sanitizedQuery, [], 3600); // Cache empty array
-      return res.json({
+      const emptyCacheData = {
         success: true,
         message: "No products found",
+        averagePrice: null,
+        priceThreshold: null,
+        history: history || null,
         results: [],
-      });
+      };
+      cache.set(sanitizedQuery, emptyCacheData, 3600);
+      return res.json(emptyCacheData);
     }
 
     // Step 1: Filter out products with missing prices & convert price strings to numbers
@@ -738,12 +743,16 @@ const getProducts = async (req, res) => {
     });
 
     if (filteredResults.length === 0) {
-      cache.set(sanitizedQuery, [], 3600);
-      return res.json({
+      const noValidPricesData = {
         success: true,
         message: "No valid prices found",
+        averagePrice: null,
+        priceThreshold: null,
+        history: history || null,
         results: [],
-      });
+      };
+      cache.set(sanitizedQuery, noValidPricesData, 3600);
+      return res.json(noValidPricesData);
     }
 
     // Step 2: Calculate the Average Price
@@ -762,24 +771,30 @@ const getProducts = async (req, res) => {
     );
 
     if (finalResults.length === 0) {
-      cache.set(sanitizedQuery, [], 3600);
-      return res.json({
+      const noThresholdData = {
         success: true,
         message: "No products met the threshold",
+        averagePrice,
+        priceThreshold,
+        history: history || null,
         results: [],
-      });
+      };
+      cache.set(sanitizedQuery, noThresholdData, 3600);
+      return res.json(noThresholdData);
     }
 
-    // Cache results
-    cache.set(sanitizedQuery, finalResults, 3600);
-
-    res.json({
+    // Cache full response object
+    const responseData = {
       success: true,
       averagePrice,
       priceThreshold,
       history,
       results: finalResults,
-    });
+    };
+
+    cache.set(sanitizedQuery, responseData, 3600);
+
+    res.json(responseData);
   } catch (error) {
     console.error("❌ Error in getProducts:", error);
     res.status(500).json({
