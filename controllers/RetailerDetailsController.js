@@ -4,26 +4,29 @@ const Retailer = require("../models/Retailer.js");
 
 const createRetailerDetails = async (req, res) => {
   try {
-    const {
-      shopname,
-      phoneNumber,
-      street,
-      pincode,
-      city,
-      state,
-      shoptime,
-    } = req.body;
+    const { shopname, phoneNumber, street, pincode, city, state, shoptime } =
+      req.body;
     const retailerId = req.user.id;
 
     // ✅ Validate required fields
-    if (!shopname || !phoneNumber || !street || !pincode || !city || !state || !shoptime) {
+    if (
+      !shopname ||
+      !phoneNumber ||
+      !street ||
+      !pincode ||
+      !city ||
+      !state ||
+      !shoptime
+    ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     // ✅ Check if retailer details already exist
     const existingRetailer = await RetailerDetails.findOne({ retailerId });
     if (existingRetailer) {
-      return res.status(400).json({ message: "Retailer details already exist" });
+      return res
+        .status(400)
+        .json({ message: "Retailer details already exist" });
     }
 
     // ✅ Check if phone number is already used
@@ -67,36 +70,6 @@ const createRetailerDetails = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-module.exports = { createRetailerDetails };
-📌 uploadImage Function (Modular Cloudinary Upload)
-Put this in utils/uploadImage.js:
-
-javascript
-Copy
-Edit
-const cloudinary = require("../config/cloudinary");
-
-const uploadImage = async (image, folder = "pricepick/retailers") => {
-  try {
-    const uploadedImage = await cloudinary.uploader.upload(image, {
-      folder,
-      transformation: [
-        { width: 500, height: 500, crop: "fill" },
-        { quality: "auto:low" },
-        { fetch_format: "auto" },
-        { flags: "progressive" },
-        { dpr: "auto" },
-      ],
-    });
-
-    return uploadedImage.secure_url;
-  } catch (error) {
-    console.error("Cloudinary Upload Error:", error.message);
-    throw new Error("Image upload failed.");
-  }
-};
-
 
 // Get Retailer Details
 const getRetailerDetails = async (req, res) => {
