@@ -214,7 +214,6 @@ const getRetailerDetailsAdded = async (req, res) => {
     }
 
     const retailer = await Retailer.findById(retailerId);
-    console.log("Retailer found:", retailer);
 
     if (!retailer) {
       return res.status(404).json({ message: "Retailer not found." });
@@ -224,7 +223,6 @@ const getRetailerDetailsAdded = async (req, res) => {
       .status(200)
       .json({ detailsExist: retailer.detailsAdded ?? false });
   } catch (error) {
-    console.error("Error in getRetailerDetailsAdded:", error.message);
     return res.status(500).json({ message: "Internal server error." });
   }
 };
