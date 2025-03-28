@@ -19,7 +19,7 @@ const uploadImage = async (image) => {
     } else {
       // ✅ File Path Upload (from Multer)
       uploadedImage = await cloudinary.uploader.upload(image, {
-        folder: "retailers",
+        folder: "retailers/products",
       });
     }
 

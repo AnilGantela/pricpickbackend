@@ -15,6 +15,7 @@ router.post("/register", retailerController.retailerRegister);
 router.post("/verify-otp", retailerController.verifyOTP);
 router.post("/login", retailerController.retailerLogin);
 router.post("/verify-login-otp", retailerController.verifyLoginOTP);
+router.get("/checkDetails", retailerController.getRetailerDetailsAdded);
 
 // ✅ Protected Routes (Require Authentication)
 router.use(authenticate);

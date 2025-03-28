@@ -7,6 +7,20 @@ const nodemailer = require("nodemailer");
 
 dotenv.config();
 
+const verifyToken = (req) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    throw new Error("Unauthorized. No token provided.");
+  }
+
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+  } catch (err) {
+    throw new Error("Invalid or expired token.");
+  }
+};
+
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
@@ -189,10 +203,32 @@ const getRetailer = async (req, res) => {
   }
 };
 
+const getRetailerDetailsAdded = async (req, res) => {
+  try {
+    const decoded = verifyToken(req);
+    const retailerId = decoded.id;
+
+    if (!mongoose.Types.ObjectId.isValid(retailerId)) {
+      return res.status(400).json({ message: "Invalid retailer ID." });
+    }
+
+    const retailer = await Retailer.findById(retailerId);
+    if (!retailer) {
+      return res.status(404).json({ message: "Retailer not found." });
+    }
+
+    return res.status(200).json({ detailsAdded: retailer.detailsAdded });
+  } catch (error) {
+    console.error("Error in getRetailerDetailsAdded:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 module.exports = {
   retailerRegister,
   verifyOTP,
   retailerLogin,
   verifyLoginOTP,
   getRetailer,
+  getRetailerDetailsAdded,
 };
