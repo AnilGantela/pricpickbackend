@@ -1,6 +1,7 @@
 const Retailer = require("../models/Retailer");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const UserOTPVerification = require("../models/UserOTPVerification");
 const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
@@ -207,8 +208,6 @@ const getRetailerDetailsAdded = async (req, res) => {
   try {
     const decoded = verifyToken(req); // returns { id: ..., iat: ..., etc }
     const retailerId = decoded?.id;
-
-    console.log("Decoded JWT:", decoded);
 
     if (!retailerId || !mongoose.Types.ObjectId.isValid(retailerId)) {
       return res.status(400).json({ message: "Invalid retailer ID." });
