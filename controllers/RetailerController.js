@@ -205,21 +205,27 @@ const getRetailer = async (req, res) => {
 
 const getRetailerDetailsAdded = async (req, res) => {
   try {
-    const decoded = verifyToken(req);
-    const retailerId = decoded.id;
+    const decoded = verifyToken(req); // returns { id: ..., iat: ..., etc }
+    const retailerId = decoded?.id;
 
-    if (!mongoose.Types.ObjectId.isValid(retailerId)) {
+    console.log("Decoded JWT:", decoded);
+
+    if (!retailerId || !mongoose.Types.ObjectId.isValid(retailerId)) {
       return res.status(400).json({ message: "Invalid retailer ID." });
     }
 
     const retailer = await Retailer.findById(retailerId);
+    console.log("Retailer found:", retailer);
+
     if (!retailer) {
       return res.status(404).json({ message: "Retailer not found." });
     }
 
-    return res.status(200).json({ detailsAdded: retailer.detailsAdded });
+    return res
+      .status(200)
+      .json({ detailsExist: retailer.detailsAdded ?? false });
   } catch (error) {
-    console.error("Error in getRetailerDetailsAdded:", error);
+    console.error("Error in getRetailerDetailsAdded:", error.message);
     return res.status(500).json({ message: "Internal server error." });
   }
 };
