@@ -2,42 +2,51 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const cors = require("cors");
+const dotEnv = require("dotenv");
+
 const retailerRoutes = require("./routes/RetailerRoute");
 const productRoutes = require("./routes/ProductRoutes");
 const userProducts = require("./routes/userProducts");
 
-const cors = require("cors");
-app.use(
-  cors({
-    origin: ["https://pricepickretailer.vercel.app", "http://localhost:5173"], // Allow only this domain
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed methods
-    credentials: true, // Allow cookies (if needed)
-  })
-);
-const dotEnv = require("dotenv");
+// Load environment variables
 dotEnv.config();
 
-const PORT = process.env.PORT || 8080;
+// Middleware
+app.use(
+  cors({
+    origin: ["https://pricepickretailer.vercel.app", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
-app.listen(PORT, () => {
-  console.log("Hello");
-});
+// Increase payload size limits to handle large JSON or base64 image data
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("database connected");
+    console.log("✅ Database connected");
   })
   .catch((error) => {
-    console.log(error);
+    console.error("❌ MongoDB connection error:", error);
   });
 
-app.use(bodyParser.json());
+// Routes
 app.use("/home", (req, res) => {
   res.send("<h1>Welcome to home page</h1>");
-  console.log("home page");
+  console.log("🟢 Home page hit");
 });
 
 app.use("/retailer", retailerRoutes);
 app.use("/retailer/product", productRoutes);
-app.use("/user/", userProducts);
+app.use("/user", userProducts);
+
+// Server start
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+});
