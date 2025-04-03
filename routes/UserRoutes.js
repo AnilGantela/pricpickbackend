@@ -4,7 +4,7 @@ const {
   getUserDetails,
   getUserSearches,
   addOrUpdateSearch,
-} = require("../controllers/userController");
+} = require("../controllers/UserController");
 
 const router = express.Router();
 
