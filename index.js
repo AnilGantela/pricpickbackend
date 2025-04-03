@@ -8,7 +8,7 @@ const dotEnv = require("dotenv");
 const retailerRoutes = require("./routes/RetailerRoute");
 const productRoutes = require("./routes/ProductRoutes");
 const userProducts = require("./routes/userProducts");
-
+const userRoutes = require("./routes/UserRoutes");
 // Load environment variables
 dotEnv.config();
 
@@ -44,6 +44,7 @@ app.use("/home", (req, res) => {
 app.use("/retailer", retailerRoutes);
 app.use("/retailer/product", productRoutes);
 app.use("/user", userProducts);
+app.use("/app", userRoutes);
 
 // Server start
 const PORT = process.env.PORT || 8080;
