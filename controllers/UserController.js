@@ -70,13 +70,19 @@ const getUserSearches = async (req, res) => {
 const addOrUpdateSearch = async (req, res) => {
   try {
     const { clerkId, query } = req.body;
+
+    if (!clerkId || !query) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+
     const user = await User.findOne({ clerkId });
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    let searchEntry = await Search.findOne({ query });
+    const normalizedQuery = query.trim().toLowerCase();
+    let searchEntry = await Search.findOne({ query: normalizedQuery });
 
     if (searchEntry) {
       searchEntry.count += 1;
@@ -86,19 +92,21 @@ const addOrUpdateSearch = async (req, res) => {
       await searchEntry.save();
     } else {
       searchEntry = await Search.create({
-        query,
+        query: normalizedQuery,
         userIds: [user._id],
         count: 1,
       });
     }
 
     await User.findByIdAndUpdate(user._id, {
-      $push: { searchIds: searchEntry._id },
+      $addToSet: { searchIds: searchEntry._id },
     });
+
     res
       .status(200)
       .json({ message: "Search added/updated successfully.", searchEntry });
   } catch (error) {
+    console.error("❌ Error in addOrUpdateSearch:", error);
     res.status(500).json({ message: "Server error.", error });
   }
 };

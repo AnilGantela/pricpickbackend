@@ -18,6 +18,6 @@ router.get("/user/:clerkId", getUserDetails);
 router.get("/user/:clerkId/searches", getUserSearches);
 
 // Add or update a user's search query
-router.post("/user/:clerkId/search", addOrUpdateSearch);
+router.post("/user/:clerkId/addsearch", addOrUpdateSearch);
 
 module.exports = router;
