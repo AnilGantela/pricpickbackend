@@ -85,7 +85,7 @@ const addOrUpdateSearch = async (req, res) => {
     let searchEntry = await Search.findOne({ query: normalizedQuery });
 
     if (searchEntry) {
-      searchEntry.count += 1;
+      searchEntry.searchCount += 1;
 
       if (!Array.isArray(searchEntry.userIds)) {
         searchEntry.userIds = [];
