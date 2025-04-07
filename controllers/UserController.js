@@ -9,21 +9,25 @@ const saveUserDetails = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    let user = await User.findOne({ clerkId: id });
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkId: id },
+      {
+        $set: {
+          username: fullName,
+          email: primaryEmailAddress,
+          profileImage: imageUrl,
+        },
+      },
+      { upsert: true, new: true }
+    );
 
-    if (!user) {
-      user = new User({
-        clerkId: id,
-        username: fullName,
-        email: primaryEmailAddress,
-        profileImage: imageUrl,
-      });
-      await user.save();
-    }
-
-    res.status(200).json({ message: "User details saved successfully.", user });
+    res.status(200).json({
+      message: "User saved or updated successfully.",
+      user: updatedUser,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error.", error });
+    console.error("🔥 saveUserDetails error:", error);
+    res.status(500).json({ message: "Server error.", error: error.message });
   }
 };
 
