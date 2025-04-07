@@ -9,17 +9,20 @@ const saveUserDetails = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    const updatedUser = await User.findOneAndUpdate(
-      { clerkId: id },
-      {
-        $set: {
-          username: fullName,
-          email: primaryEmailAddress,
-          profileImage: imageUrl,
-        },
-      },
-      { upsert: true, new: true }
-    );
+    const filter = {
+      $or: [{ clerkId: id }, { email: primaryEmailAddress }],
+    };
+
+    const update = {
+      clerkId: id,
+      username: fullName,
+      email: primaryEmailAddress,
+      profileImage: imageUrl,
+    };
+
+    const options = { upsert: true, new: true };
+
+    const updatedUser = await User.findOneAndUpdate(filter, update, options);
 
     res.status(200).json({
       message: "User saved or updated successfully.",
@@ -27,7 +30,7 @@ const saveUserDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("🔥 saveUserDetails error:", error);
-    res.status(500).json({ message: "Server error.", error: error.message });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
