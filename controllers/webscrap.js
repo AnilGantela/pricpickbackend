@@ -831,7 +831,7 @@ const getRetailersProducts = async (req, res) => {
     })
       .populate({
         path: "retailerId",
-        populate: { path: "retailerDetailsId" }, // ✅ Nested population
+        populate: { path: "retailerDetailsId" },
       })
       .lean();
 
@@ -854,13 +854,14 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "No products found in this city." });
     }
 
-    // Extract required fields
+    // Extract required fields including images
     const formattedProducts = filteredProducts.map((product) => ({
       shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       title: product.name,
       description: product.description,
       price: product.price - (product.price * (product.discount || 0)) / 100,
       address: product.retailerId?.retailerDetailsId?.address || "N/A",
+      images: product.images || [], // ⬅️ Include this line
     }));
 
     res.status(200).json({ success: true, products: formattedProducts });
