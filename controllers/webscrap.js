@@ -859,7 +859,6 @@ const getRetailersProducts = async (req, res) => {
       shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       price: product.price - (product.price * (product.discount || 0)) / 100,
       discount: product.discount || 0,
-      images: product.images || [],
     }));
 
     res.status(200).json({ success: true, products: formattedProducts });
