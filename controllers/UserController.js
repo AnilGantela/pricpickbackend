@@ -58,64 +58,55 @@ const getUserSearches = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const searches = await Search.find({ userId: user._id })
-      .sort({ createdAt: -1 })
-      .select("query searchCount createdAt");
+    const searches = await Search.find({ userId: user._id }).sort({
+      createdAt: -1,
+    });
+    const searchCount = searches.reduce(
+      (acc, curr) => acc + curr.searchCount,
+      0
+    );
 
-    res.status(200).json({ searches, searchCount: searches.length });
+    res.status(200).json({ searches, searchCount });
   } catch (error) {
-    res.status(500).json({ message: "Server error.", error });
+    console.error("Error in getUserSearches:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
 const addOrUpdateSearch = async (req, res) => {
   try {
-    const { clerkId, query } = req.body;
+    const { clerkId } = req.params;
+    const { query } = req.body;
 
-    if (!clerkId || !query) {
+    if (!query || !clerkId) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
     const user = await User.findOne({ clerkId });
-
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const normalizedQuery = query.trim().toLowerCase();
-    let searchEntry = await Search.findOne({ query: normalizedQuery });
+    const existingSearch = await Search.findOne({ query, userId: user._id });
 
-    if (searchEntry) {
-      searchEntry.searchCount += 1;
-
-      if (!Array.isArray(searchEntry.userIds)) {
-        searchEntry.userIds = [];
-      }
-
-      if (!searchEntry.userIds.includes(user._id)) {
-        searchEntry.userIds.push(user._id);
-      }
-
-      await searchEntry.save();
-    } else {
-      searchEntry = await Search.create({
-        query: normalizedQuery,
-        userIds: [user._id],
-        count: 1,
-      });
+    if (existingSearch) {
+      existingSearch.searchCount += 1;
+      await existingSearch.save();
+      return res
+        .status(200)
+        .json({ message: "Search updated.", search: existingSearch });
     }
 
-    await User.findByIdAndUpdate(user._id, {
-      $addToSet: { searchIds: searchEntry._id },
+    const newSearch = new Search({
+      query,
+      userId: user._id,
     });
 
-    res.status(200).json({
-      message: "Search added/updated successfully.",
-      searchEntry,
-    });
+    await newSearch.save();
+    res.status(201).json({ message: "Search created.", search: newSearch });
   } catch (error) {
-    console.error("❌ Error in addOrUpdateSearch:", error);
-    res.status(500).json({ message: "Server error.", error });
+    console.error("Error in addOrUpdateSearch:", error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
