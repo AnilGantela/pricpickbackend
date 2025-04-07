@@ -854,14 +854,12 @@ const getRetailersProducts = async (req, res) => {
         .json({ success: false, message: "No products found in this city." });
     }
 
-    // Extract required fields including images
     const formattedProducts = filteredProducts.map((product) => ({
-      shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       title: product.name,
-      description: product.description,
+      shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       price: product.price - (product.price * (product.discount || 0)) / 100,
-      address: product.retailerId?.retailerDetailsId?.address || "N/A",
-      images: product.images || [], // ⬅️ Include this line
+      discount: product.discount || 0,
+      images: product.images || [],
     }));
 
     res.status(200).json({ success: true, products: formattedProducts });
