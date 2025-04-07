@@ -86,9 +86,15 @@ const addOrUpdateSearch = async (req, res) => {
 
     if (searchEntry) {
       searchEntry.count += 1;
+
+      if (!Array.isArray(searchEntry.userIds)) {
+        searchEntry.userIds = [];
+      }
+
       if (!searchEntry.userIds.includes(user._id)) {
         searchEntry.userIds.push(user._id);
       }
+
       await searchEntry.save();
     } else {
       searchEntry = await Search.create({
@@ -102,9 +108,10 @@ const addOrUpdateSearch = async (req, res) => {
       $addToSet: { searchIds: searchEntry._id },
     });
 
-    res
-      .status(200)
-      .json({ message: "Search added/updated successfully.", searchEntry });
+    res.status(200).json({
+      message: "Search added/updated successfully.",
+      searchEntry,
+    });
   } catch (error) {
     console.error("❌ Error in addOrUpdateSearch:", error);
     res.status(500).json({ message: "Server error.", error });
