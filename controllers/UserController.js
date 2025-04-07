@@ -58,10 +58,11 @@ const getUserSearches = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const searches = await Search.find({ userId: user._id });
-    const searchCount = searches.length;
+    const searches = await Search.find({ userId: user._id })
+      .sort({ createdAt: -1 })
+      .select("query searchCount createdAt");
 
-    res.status(200).json({ searches, searchCount });
+    res.status(200).json({ searches, searchCount: searches.length });
   } catch (error) {
     res.status(500).json({ message: "Server error.", error });
   }
