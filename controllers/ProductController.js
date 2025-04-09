@@ -252,6 +252,19 @@ const getAddProductCategories = async (req, res) => {
   }
 };
 
+const getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find({ stock: { $gt: 0 } }) // Only products with stock > 0
+      .select("name price discount images stock") // Only necessary product fields
+      .populate("retailerId", "shopName location"); // Only shopName and location from Retailer
+
+    res.status(200).json({ success: true, products });
+  } catch (error) {
+    console.error("Error fetching all products:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -260,4 +273,5 @@ module.exports = {
   getRetailerProducts,
   getProductCategoryData,
   getAddProductCategories,
+  getAllProducts,
 };
