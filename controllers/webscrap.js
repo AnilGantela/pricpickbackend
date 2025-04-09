@@ -868,7 +868,62 @@ const getRetailersProducts = async (req, res) => {
   }
 };
 
+const getAllRetailersProducts = async (req, res) => {
+  try {
+    const { city } = req.body;
+
+    // Validate input
+    if (!city || !city.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "City is required." });
+    }
+
+    const sanitizedCity = city.trim().replace(/[^\w\s\-\+\.]/g, "");
+
+    // Fetch all products and populate retailer & retailerDetails
+    const products = await Product.find({})
+      .populate({
+        path: "retailerId",
+        populate: { path: "retailerDetailsId" },
+      })
+      .lean();
+
+    if (!products || products.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No products found." });
+    }
+
+    // Filter products by city
+    const filteredProducts = products.filter((product) =>
+      product.retailerId?.retailerDetailsId?.address?.city
+        ?.toLowerCase()
+        .includes(sanitizedCity.toLowerCase())
+    );
+
+    if (filteredProducts.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No products found in this city." });
+    }
+
+    const formattedProducts = filteredProducts.map((product) => ({
+      title: product.name,
+      shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
+      price: product.price - (product.price * (product.discount || 0)) / 100,
+      discount: product.discount || 0,
+    }));
+
+    res.status(200).json({ success: true, products: formattedProducts });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 module.exports = {
   getProducts,
   getRetailersProducts,
+  getAllRetailersProducts,
 };
