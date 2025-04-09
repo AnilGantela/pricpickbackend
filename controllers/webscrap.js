@@ -900,10 +900,13 @@ const getAllRetailersProducts = async (req, res) => {
     }
 
     const formattedProducts = filteredProducts.map((product) => ({
+      _id: product._id,
       title: product.name,
       shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       price: product.price - (product.price * (product.discount || 0)) / 100,
       discount: product.discount || 0,
+      images: product.images || [],
+      category: product.category || "Others",
     }));
 
     res.status(200).json({ success: true, products: formattedProducts });
