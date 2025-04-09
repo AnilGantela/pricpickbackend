@@ -896,9 +896,7 @@ const getAllRetailersProducts = async (req, res) => {
       .lean();
 
     if (!products || products.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No products found." });
+      return res.status(404).json({ success: false, message: "hiii" });
     }
 
     // Formatting the products
