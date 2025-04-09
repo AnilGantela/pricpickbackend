@@ -880,9 +880,15 @@ const getAllRetailersProducts = async (req, res) => {
     }
 
     const sanitizedCity = city.trim().replace(/[^\w\s\-\+\.]/g, "");
+    console.log("Sanitized city:", sanitizedCity); // Debug log
 
-    // Fetch all products and populate retailer & retailerDetails
-    const products = await Product.find({})
+    // Fetch products with filtering for city directly in the database
+    const products = await Product.find({
+      "retailerId.retailerDetailsId.address.city": {
+        $regex: sanitizedCity,
+        $options: "i",
+      },
+    })
       .populate({
         path: "retailerId",
         populate: { path: "retailerDetailsId" },
@@ -895,20 +901,8 @@ const getAllRetailersProducts = async (req, res) => {
         .json({ success: false, message: "No products found." });
     }
 
-    // Filter products by city
-    const filteredProducts = products.filter((product) =>
-      product.retailerId?.retailerDetailsId?.address?.city
-        ?.toLowerCase()
-        .includes(sanitizedCity.toLowerCase())
-    );
-
-    if (filteredProducts.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No products found in this city." });
-    }
-
-    const formattedProducts = filteredProducts.map((product) => ({
+    // Formatting the products
+    const formattedProducts = products.map((product) => ({
       title: product.name,
       shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
       price: product.price - (product.price * (product.discount || 0)) / 100,
@@ -917,7 +911,7 @@ const getAllRetailersProducts = async (req, res) => {
 
     res.status(200).json({ success: true, products: formattedProducts });
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Error fetching products:", error.message);
     res.status(500).json({ success: false, message: "Server error." });
   }
 };
