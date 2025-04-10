@@ -1,4 +1,5 @@
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+const mongoose = require("mongoose");
 const chromium = require("@sparticuz/chrome-aws-lambda");
 const puppeteer = require("puppeteer-extra");
 const RetailerDetails = require("../models/RetailerDetails");
@@ -916,8 +917,65 @@ const getAllRetailersProducts = async (req, res) => {
   }
 };
 
+const getProductById = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Invalid product ID." });
+    }
+
+    const product = await Product.findById(productId).populate({
+      path: "retailerId",
+      select: "username email retailerDetailsId",
+      populate: {
+        path: "retailerDetailsId",
+        model: "RetailerDetails",
+        select: "shopname phoneNumber address shoptime photo", // 👈 includes the shop photo
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    const retailer = product.retailerId;
+    const retailerDetails = retailer?.retailerDetailsId;
+
+    res.status(200).json({
+      message: "Product fetched successfully.",
+      product: {
+        _id: product._id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        images: product.images,
+        category: product.category,
+        stock: product.stock,
+        discount: product.discount,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+      },
+      retailer: {
+        _id: retailer._id,
+        username: retailer.username,
+        email: retailer.email,
+        shopname: retailerDetails?.shopname,
+        phoneNumber: retailerDetails?.phoneNumber,
+        address: retailerDetails?.address,
+        shoptime: retailerDetails?.shoptime,
+        photo: retailerDetails?.photo, // ✅ Retailer image here
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching product:", error.message);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
   getProducts,
   getRetailersProducts,
   getAllRetailersProducts,
+  getProductById,
 };

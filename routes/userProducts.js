@@ -5,5 +5,6 @@ const webscrap = require("../controllers/webscrap");
 router.get("/:searchName", webscrap.getProducts);
 router.post("/retailer/:searchName", webscrap.getRetailersProducts);
 router.post("/products", webscrap.getAllRetailersProducts);
+router.get("/product/:id", webscrap.getProductById);
 
 module.exports = router;
