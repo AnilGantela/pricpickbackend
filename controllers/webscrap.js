@@ -973,9 +973,53 @@ const getProductById = async (req, res) => {
   }
 };
 
+const getAllProductsByRetailerId = async (req, res) => {
+  try {
+    const { retailerId } = req.params;
+
+    if (!retailerId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Retailer ID is required." });
+    }
+
+    // Fetch all products by retailerId
+    const products = await Product.find({ retailerId })
+      .populate({
+        path: "retailerId",
+        populate: { path: "retailerDetailsId" },
+      })
+      .lean();
+
+    if (products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found for this retailer.",
+      });
+    }
+
+    // Format the product data for response
+    const formattedProducts = products.map((product) => ({
+      _id: product._id,
+      title: product.name,
+      shopname: product.retailerId?.retailerDetailsId?.shopname || "N/A",
+      price: product.price - (product.price * (product.discount || 0)) / 100,
+      discount: product.discount || 0,
+      images: product.images || [],
+      category: product.category || "Others",
+    }));
+
+    res.status(200).json({ success: true, products: formattedProducts });
+  } catch (error) {
+    console.error("Error fetching products by retailer:", error.message);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 module.exports = {
   getProducts,
   getRetailersProducts,
   getAllRetailersProducts,
   getProductById,
+  getAllProductsByRetailerId,
 };
