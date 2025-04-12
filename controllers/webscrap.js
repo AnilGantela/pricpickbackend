@@ -1066,32 +1066,28 @@ getCityCategoryProducts = async (req, res) => {
         .json({ success: false, message: "City and category are required." });
     }
 
-    // Step 1: Find all retailers in the given city
-    const retailersInCity = await RetailerDetails.find({
-      "address.city": city,
-    }).select("retailerId");
+    const products = await Product.find({ category })
+      .populate({
+        path: "retailerId",
+        populate: {
+          path: "retailerDetailsId",
+          match: { "address.city": city },
+        },
+      })
+      .exec();
 
-    const retailerIds = retailersInCity.map((rd) => rd.retailerId);
+    // Filter out products where retailerDetailsId was not matched (null)
+    const filteredProducts = products.filter(
+      (product) => product.retailerId && product.retailerId.retailerDetailsId
+    );
 
-    if (retailerIds.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No retailers found in this city." });
-    }
-
-    // Step 2: Find all products by those retailers that match the category
-    const products = await Product.find({
-      retailerId: { $in: retailerIds },
-      category: category,
-    });
-
-    if (products.length === 0) {
+    if (filteredProducts.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "No products found." });
     }
 
-    return res.status(200).json({ success: true, data: products });
+    return res.status(200).json({ success: true, products: filteredProducts });
   } catch (err) {
     console.error("Error in getCityCategoryProducts:", err);
     res.status(500).json({ success: false, message: "Internal server error." });
