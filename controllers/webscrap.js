@@ -1053,9 +1053,6 @@ const createOrder = async (req, res) => {
   }
 };
 
-const Product = require("../models/Product");
-const Retailer = require("../models/Retailer");
-
 const getCityCategoryProducts = async (req, res) => {
   try {
     const { city, category } = req.query;
@@ -1066,22 +1063,32 @@ const getCityCategoryProducts = async (req, res) => {
         .json({ success: false, message: "City and category are required." });
     }
 
-    // Step 1: Find all retailers in the city
-    const retailersInCity = await Retailer.find({
-      "address.city": city,
-    }).select("_id");
+    // 1. Get all retailers in the city
+    const retailersInCity = await Retailer.find({ "address.city": city });
 
-    const retailerIds = retailersInCity.map((r) => r._id);
+    const retailerIds = retailersInCity.map((r) => r._id.toString());
 
-    // Step 2: Find products of the given category from those retailers
+    // 2. Get all products of that category from those retailers
     const products = await Product.find({
       category,
       retailerId: { $in: retailerIds },
     });
 
+    // 3. Combine product with its retailer
+    const enrichedProducts = products.map((product) => {
+      const retailer = retailersInCity.find(
+        (r) => r._id.toString() === product.retailerId.toString()
+      );
+      return {
+        product,
+        retailer,
+      };
+    });
+
     res.status(200).json({
       success: true,
-      products,
+      count: enrichedProducts.length,
+      products: enrichedProducts,
     });
   } catch (error) {
     console.error("Error fetching city-category products:", error.message);
