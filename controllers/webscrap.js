@@ -5,7 +5,6 @@ const RetailerDetails = require("../models/RetailerDetails");
 const mongoose = require("mongoose");
 const chromium = require("@sparticuz/chrome-aws-lambda");
 const puppeteer = require("puppeteer-extra");
-const Product = require("../models/Product");
 const NodeCache = require("node-cache");
 const dotEnv = require("dotenv");
 const Order = require("../models/Order");
