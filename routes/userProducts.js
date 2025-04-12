@@ -7,5 +7,6 @@ router.post("/retailer/:searchName", webscrap.getRetailersProducts);
 router.post("/products", webscrap.getAllRetailersProducts);
 router.get("/product/:id", webscrap.getProductById);
 router.get("/retailer/:retailerId", webscrap.getAllProductsByRetailerId);
+router.post("/order", webscrap.createOrder);
 
 module.exports = router;

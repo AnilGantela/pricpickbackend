@@ -6,6 +6,7 @@ const RetailerDetails = require("../models/RetailerDetails");
 const Product = require("../models/Product");
 const NodeCache = require("node-cache");
 const dotEnv = require("dotenv");
+const Order = require("../models/Order");
 dotEnv.config();
 
 // Initialize cache with a 1-hour TTL
@@ -1016,10 +1017,47 @@ const getAllProductsByRetailerId = async (req, res) => {
   }
 };
 
+const createOrder = async (req, res) => {
+  try {
+    const { userId, username, products, shippingAddress, paymentMethod } =
+      req.body;
+
+    // Calculate total amount and product total
+    let totalAmount = 0;
+    products.forEach((product) => {
+      totalAmount +=
+        product.price * product.quantity -
+        (product.price * product.discount * product.quantity) / 100;
+    });
+
+    // Create the order
+    const newOrder = new Order({
+      userId,
+      username,
+      products,
+      shippingAddress,
+      totalAmount,
+      paymentMethod,
+    });
+
+    await newOrder.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Order created successfully.",
+      order: newOrder,
+    });
+  } catch (error) {
+    console.error("Error creating order:", error.message);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 module.exports = {
   getProducts,
   getRetailersProducts,
   getAllRetailersProducts,
   getProductById,
   getAllProductsByRetailerId,
+  createOrder,
 };
