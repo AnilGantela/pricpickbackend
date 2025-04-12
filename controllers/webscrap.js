@@ -1,8 +1,10 @@
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+const Product = require("../models/Product");
+const Retailer = require("../models/Retailer");
+const RetailerDetails = require("../models/RetailerDetails");
 const mongoose = require("mongoose");
 const chromium = require("@sparticuz/chrome-aws-lambda");
 const puppeteer = require("puppeteer-extra");
-const RetailerDetails = require("../models/RetailerDetails");
 const Product = require("../models/Product");
 const NodeCache = require("node-cache");
 const dotEnv = require("dotenv");
@@ -1053,34 +1055,39 @@ const createOrder = async (req, res) => {
   }
 };
 
+// webscrap.js
+
 const getCityCategoryProducts = async (req, res) => {
-  try {
-    const { city, category } = req.query;
+  const { city, category } = req.body;
 
-    if (!city) {
-      return res.status(400).json({
-        success: false,
-        message: "City is required.",
-      });
-    }
-
-    if (!category) {
-      return res.status(400).json({
-        success: false,
-        message: "Category is required.",
-      });
-    }
-
-    // Assuming `Product` is your product model and you are querying a MongoDB database
-    const products = await Product.find({
-      "retailer.city": city,
-      category: category,
+  if (!city || !category) {
+    return res.status(400).json({
+      success: false,
+      message: "City and category are required.",
     });
+  }
+
+  try {
+    const retailerDetails = await RetailerDetails.findOne({
+      "address.city": city,
+    });
+
+    if (!retailerDetails) {
+      return res.status(404).json({
+        success: false,
+        message: "No retailers found in the specified city.",
+      });
+    }
+
+    const products = await Product.find({
+      category,
+      retailerId: retailerDetails.retailerId,
+    }).populate("retailerId");
 
     if (products.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "No products found for this city and category.",
+        message: "No products found in the specified category for this city.",
       });
     }
 
@@ -1089,12 +1096,16 @@ const getCityCategoryProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.error("Error fetching city-category products:", error);
+    console.error("Error fetching products by city and category:", error);
     return res.status(500).json({
       success: false,
       message: "Server error.",
     });
   }
+};
+
+module.exports = {
+  getCityCategoryProducts,
 };
 
 module.exports = {
