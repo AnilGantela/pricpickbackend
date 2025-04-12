@@ -131,7 +131,7 @@ class ProductScraper {
                 : "Price not available",
               retailer: "Flipkart",
               productLink: productLinkElement
-                ? "https://www.flipkart.com/" +
+                ? "https://www.flipkart.com" +
                   productLinkElement.getAttribute("href")
                 : "No link available",
             };
@@ -1056,55 +1056,46 @@ const createOrder = async (req, res) => {
 
 // webscrap.js
 
-const getCityCategoryProducts = async (req, res) => {
-  const { city, category } = req.body;
-
-  if (!city || !category) {
-    return res.status(400).json({
-      success: false,
-      message: "City and category are required.",
-    });
-  }
-
+getCityCategoryProducts = async (req, res) => {
   try {
-    const retailerDetails = await RetailerDetails.findOne({
-      "address.city": city,
-    });
+    const { city, category } = req.body;
 
-    if (!retailerDetails) {
-      return res.status(404).json({
-        success: false,
-        message: "No retailers found in the specified city.",
-      });
+    if (!city || !category) {
+      return res
+        .status(400)
+        .json({ success: false, message: "City and category are required." });
     }
 
+    // Step 1: Find all retailers in the given city
+    const retailersInCity = await RetailerDetails.find({
+      "address.city": city,
+    }).select("retailerId");
+
+    const retailerIds = retailersInCity.map((rd) => rd.retailerId);
+
+    if (retailerIds.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No retailers found in this city." });
+    }
+
+    // Step 2: Find all products by those retailers that match the category
     const products = await Product.find({
-      category,
-      retailerId: retailerDetails.retailerId,
-    }).populate("retailerId");
+      retailerId: { $in: retailerIds },
+      category: category,
+    });
 
     if (products.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No products found in the specified category for this city.",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "No products found." });
     }
 
-    return res.status(200).json({
-      success: true,
-      products,
-    });
-  } catch (error) {
-    console.error("Error fetching products by city and category:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error.",
-    });
+    return res.status(200).json({ success: true, data: products });
+  } catch (err) {
+    console.error("Error in getCityCategoryProducts:", err);
+    res.status(500).json({ success: false, message: "Internal server error." });
   }
-};
-
-module.exports = {
-  getCityCategoryProducts,
 };
 
 module.exports = {
