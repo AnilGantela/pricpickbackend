@@ -1057,42 +1057,43 @@ const getCityCategoryProducts = async (req, res) => {
   try {
     const { city, category } = req.query;
 
-    if (!city || !category) {
-      return res
-        .status(400)
-        .json({ success: false, message: "City and category are required." });
+    if (!city) {
+      return res.status(400).json({
+        success: false,
+        message: "City is required.",
+      });
     }
 
-    // 1. Get all retailers in the city
-    const retailersInCity = await Retailer.find({ "address.city": city });
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "Category is required.",
+      });
+    }
 
-    const retailerIds = retailersInCity.map((r) => r._id.toString());
-
-    // 2. Get all products of that category from those retailers
+    // Assuming `Product` is your product model and you are querying a MongoDB database
     const products = await Product.find({
-      category,
-      retailerId: { $in: retailerIds },
+      "retailer.city": city,
+      category: category,
     });
 
-    // 3. Combine product with its retailer
-    const enrichedProducts = products.map((product) => {
-      const retailer = retailersInCity.find(
-        (r) => r._id.toString() === product.retailerId.toString()
-      );
-      return {
-        product,
-        retailer,
-      };
-    });
+    if (products.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No products found for this city and category.",
+      });
+    }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      count: enrichedProducts.length,
-      products: enrichedProducts,
+      products,
     });
   } catch (error) {
-    console.error("Error fetching city-category products:", error.message);
-    res.status(500).json({ success: false, message: "Server error." });
+    console.error("Error fetching city-category products:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error.",
+    });
   }
 };
 
