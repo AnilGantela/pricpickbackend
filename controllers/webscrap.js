@@ -1053,6 +1053,42 @@ const createOrder = async (req, res) => {
   }
 };
 
+const Product = require("../models/Product");
+const Retailer = require("../models/Retailer");
+
+const getCityCategoryProducts = async (req, res) => {
+  try {
+    const { city, category } = req.query;
+
+    if (!city || !category) {
+      return res
+        .status(400)
+        .json({ success: false, message: "City and category are required." });
+    }
+
+    // Step 1: Find all retailers in the city
+    const retailersInCity = await Retailer.find({
+      "address.city": city,
+    }).select("_id");
+
+    const retailerIds = retailersInCity.map((r) => r._id);
+
+    // Step 2: Find products of the given category from those retailers
+    const products = await Product.find({
+      category,
+      retailerId: { $in: retailerIds },
+    });
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    console.error("Error fetching city-category products:", error.message);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 module.exports = {
   getProducts,
   getRetailersProducts,
@@ -1060,4 +1096,5 @@ module.exports = {
   getProductById,
   getAllProductsByRetailerId,
   createOrder,
+  getCityCategoryProducts,
 };

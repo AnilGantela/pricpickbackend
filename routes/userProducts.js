@@ -8,5 +8,6 @@ router.post("/products", webscrap.getAllRetailersProducts);
 router.get("/product/:id", webscrap.getProductById);
 router.get("/retailer/:retailerId", webscrap.getAllProductsByRetailerId);
 router.post("/order", webscrap.createOrder);
+router.get("/retailer/category", webscrap.getCityCategoryProducts);
 
 module.exports = router;
