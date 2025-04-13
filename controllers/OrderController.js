@@ -2,6 +2,7 @@ const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const Order = require("../models/Order");
 const Payment = require("../models/Payment");
+const User = require("../models/User"); // ⬅️ Don't forget to import this!
 require("dotenv").config();
 
 const razorpay = new Razorpay({
@@ -9,15 +10,25 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Create Order & Payment
 exports.createOrder = async (req, res) => {
-  const { userId, products, totalAmount, method, deliveryAddress } = req.body;
+  const {
+    userId: clerkUserId,
+    products,
+    totalAmount,
+    method,
+    deliveryAddress,
+  } = req.body;
 
   try {
+    // 🔍 Map Clerk ID to MongoDB User ID
+    const user = await User.findOne({ clerkId: clerkUserId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     let razorpayOrder = null;
     let payment = null;
 
-    // Handle Razorpay Payment
     if (method === "razorpay") {
       razorpayOrder = await razorpay.orders.create({
         amount: totalAmount,
@@ -32,19 +43,20 @@ exports.createOrder = async (req, res) => {
         razorpayOrderId: razorpayOrder.id,
       });
     }
-    // Handle other payment methods (UPI, COD) here as needed
 
     const order = await Order.create({
-      userId,
+      userId: user._id, // ✅ Use your internal MongoDB user ID
       products,
       totalAmount,
       status: method === "cod" ? "pending" : "created",
-      paymentId: payment._id,
+      paymentId: payment?._id,
       deliveryAddress,
     });
 
-    payment.orderId = order._id;
-    await payment.save();
+    if (payment) {
+      payment.orderId = order._id;
+      await payment.save();
+    }
 
     res.status(201).json({
       message: "Order created successfully",
@@ -54,9 +66,10 @@ exports.createOrder = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
