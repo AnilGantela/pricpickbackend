@@ -11,13 +11,7 @@ const razorpay = new Razorpay({
 
 // Create Order & Payment
 exports.createOrder = async (req, res) => {
-  const {
-    userId,
-    products, // [{ productId, name, quantity, price }]
-    totalAmount,
-    method,
-    deliveryAddress, // { name, phone, addressLine1, addressLine2, city, state, pincode }
-  } = req.body;
+  const { userId, products, totalAmount, method, deliveryAddress } = req.body;
 
   try {
     let razorpayOrder = null;
@@ -38,31 +32,15 @@ exports.createOrder = async (req, res) => {
         razorpayOrderId: razorpayOrder.id,
       });
     }
-    // Handle UPI Payment
-    else if (method === "upi") {
-      payment = await Payment.create({
-        method,
-        amount: totalAmount,
-        status: "pending", // UPI is pending until confirmation
-      });
-    }
-    // Handle COD Payment
-    else if (method === "cod") {
-      payment = await Payment.create({
-        method,
-        amount: totalAmount,
-        status: "pending", // COD is marked as pending until confirmed
-      });
-    }
+    // Handle other payment methods (UPI, COD) here as needed
 
-    // Create Order with Delivery Address
     const order = await Order.create({
       userId,
       products,
       totalAmount,
-      status: method === "cod" ? "pending" : "created", // COD orders are pending until confirmed
+      status: method === "cod" ? "pending" : "created",
       paymentId: payment._id,
-      deliveryAddress, // Include delivery address here
+      deliveryAddress,
     });
 
     payment.orderId = order._id;
@@ -75,7 +53,7 @@ exports.createOrder = async (req, res) => {
       razorpayOrder,
     });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    console.error(error);
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
@@ -116,30 +94,5 @@ exports.verifyRazorpayPayment = async (req, res) => {
     res
       .status(500)
       .json({ message: "Verification failed", error: err.message });
-  }
-};
-
-// Confirm COD order
-exports.confirmCodOrder = async (req, res) => {
-  const { orderId } = req.body;
-
-  try {
-    const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
-
-    const payment = await Payment.findById(order.paymentId);
-    if (!payment) return res.status(404).json({ message: "Payment not found" });
-
-    payment.status = "paid";
-    await payment.save();
-
-    order.status = "confirmed";
-    await order.save();
-
-    res.json({ message: "COD order confirmed", order });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Failed to confirm COD order", error: err.message });
   }
 };
