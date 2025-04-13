@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.post("/create", createOrder);
 router.post("/verify", verifyRazorpayPayment);
-router.get("/orders/user/:userId", getAllOrdersByClerkId);
+router.get("/user/:userId", getAllOrdersByClerkId);
 
 module.exports = router;
