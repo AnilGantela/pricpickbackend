@@ -11,7 +11,14 @@ const orderSchema = new mongoose.Schema(
         price: Number,
       },
     ],
-    totalAmount: Number,
+    totalAmount: {
+      type: mongoose.Schema.Types.Decimal128,
+      required: true,
+      get: (value) => parseFloat(value.toString()),
+      set: (value) =>
+        mongoose.Types.Decimal128.fromString(Number(value).toFixed(2)),
+    },
+
     status: {
       type: String,
       enum: ["created", "pending", "confirmed", "cancelled"],
