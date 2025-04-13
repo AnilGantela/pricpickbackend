@@ -43,7 +43,7 @@ exports.createOrder = async (req, res) => {
       payment = await Payment.create({
         method,
         amount: totalAmount,
-        status: "pending",
+        status: "pending", // UPI is pending until confirmation
       });
     }
     // Handle COD Payment
@@ -51,7 +51,7 @@ exports.createOrder = async (req, res) => {
       payment = await Payment.create({
         method,
         amount: totalAmount,
-        status: "pending", // ✅ COD is marked as pending
+        status: "pending", // COD is marked as pending until confirmed
       });
     }
 
