@@ -118,9 +118,6 @@ exports.verifyRazorpayPayment = async (req, res) => {
   }
 };
 
-const User = require("../models/userModel");
-const Order = require("../models/orderModel");
-
 exports.getAllOrdersByClerkId = async (req, res) => {
   const { userId: clerkId } = req.params;
 
