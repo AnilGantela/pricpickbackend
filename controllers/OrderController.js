@@ -13,16 +13,17 @@ const razorpay = new Razorpay({
 exports.createOrder = async (req, res) => {
   const {
     userId,
-    retailerId,
     products, // [{ productId, name, quantity, price }]
     totalAmount,
     method,
+    deliveryAddress, // { name, phone, addressLine1, addressLine2, city, state, pincode }
   } = req.body;
 
   try {
     let razorpayOrder = null;
     let payment = null;
 
+    // Handle Razorpay Payment
     if (method === "razorpay") {
       razorpayOrder = await razorpay.orders.create({
         amount: totalAmount,
@@ -36,13 +37,17 @@ exports.createOrder = async (req, res) => {
         status: "created",
         razorpayOrderId: razorpayOrder.id,
       });
-    } else if (method === "upi") {
+    }
+    // Handle UPI Payment
+    else if (method === "upi") {
       payment = await Payment.create({
         method,
         amount: totalAmount,
         status: "pending",
       });
-    } else if (method === "cod") {
+    }
+    // Handle COD Payment
+    else if (method === "cod") {
       payment = await Payment.create({
         method,
         amount: totalAmount,
@@ -50,20 +55,21 @@ exports.createOrder = async (req, res) => {
       });
     }
 
+    // Create Order with Delivery Address
     const order = await Order.create({
       userId,
-      retailerId,
       products,
       totalAmount,
-      status: method === "cod" ? "pending" : "created",
+      status: method === "cod" ? "pending" : "created", // COD orders are pending until confirmed
       paymentId: payment._id,
+      deliveryAddress, // Include delivery address here
     });
 
     payment.orderId = order._id;
     await payment.save();
 
     res.status(201).json({
-      message: "Order created",
+      message: "Order created successfully",
       order,
       payment,
       razorpayOrder,
