@@ -2,6 +2,7 @@ const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const Order = require("../models/Order");
 const Payment = require("../models/Payment");
+const mongoose = require("mongoose");
 const User = require("../models/User"); // ⬅️ Don't forget to import this!
 require("dotenv").config();
 
@@ -9,6 +10,7 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
+
 exports.createOrder = async (req, res) => {
   const {
     userId: clerkUserId,
@@ -28,19 +30,23 @@ exports.createOrder = async (req, res) => {
     // Round totalAmount to 2 decimal places
     const roundedTotalAmount = parseFloat(totalAmount).toFixed(2);
 
+    // Convert the totalAmount to Decimal128
+    const decimalTotalAmount =
+      mongoose.Types.Decimal128.fromString(roundedTotalAmount);
+
     let razorpayOrder = null;
     let payment = null;
 
     if (method === "razorpay") {
       razorpayOrder = await razorpay.orders.create({
-        amount: roundedTotalAmount * 100, // Razorpay expects amount in paise
+        amount: decimalTotalAmount.toString() * 100, // Razorpay expects amount in paise
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
       });
 
       payment = await Payment.create({
         method,
-        amount: roundedTotalAmount,
+        amount: decimalTotalAmount, // Store as Decimal128
         status: "created",
         razorpayOrderId: razorpayOrder.id,
       });
@@ -49,7 +55,7 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       userId: user._id, // ✅ Use your internal MongoDB user ID
       products,
-      totalAmount: roundedTotalAmount, // Store the rounded totalAmount
+      totalAmount: decimalTotalAmount, // Save as Decimal128
       status: method === "cod" ? "pending" : "created",
       paymentId: payment?._id,
       deliveryAddress,
