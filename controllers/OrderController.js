@@ -129,14 +129,19 @@ exports.getAllOrdersByClerkId = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 📦 Find all orders for this user
-    const orders = await Order.find({ userId: user._id })
+    // 📦 Find all orders for this user with status 'confirmed'
+    const orders = await Order.find({
+      userId: user._id,
+      status: "confirmed",
+    })
       .populate("products.productId", "name price")
       .populate("paymentId", "method amount status")
       .exec();
 
     if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "No orders found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No confirmed orders found for this user" });
     }
 
     res.status(200).json(orders);
