@@ -12,10 +12,11 @@ const orderSchema = new mongoose.Schema(
       },
     ],
     totalAmount: {
-      type: Number,
+      type: mongoose.Schema.Types.Decimal128,
       required: true,
-      get: (value) => value.toFixed(2), // Get the value with 2 decimal points
-      set: (value) => parseFloat(value.toFixed(2)), // Store the value rounded to 2 decimal points
+      get: (value) => parseFloat(value.toString()).toFixed(2), // Convert to float with 2 decimals
+      set: (value) =>
+        mongoose.Types.Decimal128.fromString(Number(value).toFixed(2)), // Ensure to save it as Decimal128
     },
     status: {
       type: String,

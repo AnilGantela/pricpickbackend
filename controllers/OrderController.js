@@ -53,9 +53,9 @@ exports.createOrder = async (req, res) => {
     }
 
     const order = await Order.create({
-      userId: user._id, // ✅ Use your internal MongoDB user ID
+      userId: user._id,
       products,
-      totalAmount: decimalTotalAmount, // Save as Decimal128
+      totalAmount: mongoose.Types.Decimal128.fromString(totalAmount.toFixed(2)), // Convert to Decimal128
       status: method === "cod" ? "pending" : "created",
       paymentId: payment?._id,
       deliveryAddress,
