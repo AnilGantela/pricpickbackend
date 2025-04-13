@@ -9,7 +9,6 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
-
 exports.createOrder = async (req, res) => {
   const {
     userId: clerkUserId,
@@ -26,19 +25,22 @@ exports.createOrder = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Round totalAmount to 2 decimal places
+    const roundedTotalAmount = parseFloat(totalAmount).toFixed(2);
+
     let razorpayOrder = null;
     let payment = null;
 
     if (method === "razorpay") {
       razorpayOrder = await razorpay.orders.create({
-        amount: totalAmount,
+        amount: roundedTotalAmount * 100, // Razorpay expects amount in paise
         currency: "INR",
         receipt: `receipt_${Date.now()}`,
       });
 
       payment = await Payment.create({
         method,
-        amount: totalAmount,
+        amount: roundedTotalAmount,
         status: "created",
         razorpayOrderId: razorpayOrder.id,
       });
@@ -47,7 +49,7 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       userId: user._id, // ✅ Use your internal MongoDB user ID
       products,
-      totalAmount,
+      totalAmount: roundedTotalAmount, // Store the rounded totalAmount
       status: method === "cod" ? "pending" : "created",
       paymentId: payment?._id,
       deliveryAddress,
