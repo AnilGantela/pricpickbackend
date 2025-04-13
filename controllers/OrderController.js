@@ -1,7 +1,7 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
-const Order = require("../models/orderModel");
-const Payment = require("../models/paymentModel");
+const Order = require("../models/Order");
+const Payment = require("../models/Payment");
 require("dotenv").config();
 
 const razorpay = new Razorpay({
