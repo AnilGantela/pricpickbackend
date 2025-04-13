@@ -14,7 +14,7 @@ const orderSchema = new mongoose.Schema(
     totalAmount: Number,
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled"],
+      enum: ["created", "pending", "confirmed", "cancelled"],
       default: "pending",
     },
     paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
