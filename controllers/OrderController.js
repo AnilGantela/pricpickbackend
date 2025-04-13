@@ -117,3 +117,34 @@ exports.verifyRazorpayPayment = async (req, res) => {
       .json({ message: "Verification failed", error: err.message });
   }
 };
+
+const User = require("../models/userModel");
+const Order = require("../models/orderModel");
+
+exports.getAllOrdersByClerkId = async (req, res) => {
+  const { userId: clerkId } = req.params;
+
+  try {
+    // 🔍 Find the internal MongoDB user by Clerk ID
+    const user = await User.findOne({ clerkId });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 📦 Find all orders for this user
+    const orders = await Order.find({ userId: user._id })
+      .populate("products.productId", "name price")
+      .populate("paymentId", "method amount status")
+      .exec();
+
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: "No orders found for this user" });
+    }
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("❌ Error fetching orders:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
