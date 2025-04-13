@@ -75,9 +75,10 @@ exports.createOrder = async (req, res) => {
       razorpayOrder,
     });
   } catch (error) {
-    res
+    console.error(error); // Log the error for debugging
+    return res
       .status(500)
-      .json({ message: "Order creation failed", error: error.message });
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
